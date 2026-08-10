@@ -287,7 +287,7 @@ async function handleFormSubmit(e) {
 
         formData.append('answers', JSON.stringify(userAnswers));
 
-        const response = await fetch('http://127.0.0.1:8001/api/submit', {
+        const response = await fetch(`/api/questions?category=${category}&lang=${lang}`, {
             method: 'POST',
             body: formData
         });
