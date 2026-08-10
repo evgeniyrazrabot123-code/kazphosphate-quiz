@@ -11,16 +11,26 @@ from typing import Optional
 
 from fastapi import FastAPI, Depends, UploadFile, File, Form, Response, HTTPException, Header, status, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Boolean, Float, inspect, Integer, String, Text, DateTime, text
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from dateutil.relativedelta import relativedelta  # Требуется: pip install python-dateutil
 
+# =====================================================================
+# НАСТРОЙКА ПУТЕЙ
+# =====================================================================
 BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = BASE_DIR.parent / "frontend"
+UPLOAD_DIR = BASE_DIR / "uploads"
+
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Импорт моделей и БД
 try:
     from .seed_data import seed_questions
 except ImportError:
@@ -29,13 +39,22 @@ except ImportError:
     except ImportError:
         seed_questions = None
 
+try:
+    from . import models
+    from .database import engine, get_db
+except ImportError:
+    import models
+    from database import engine, get_db
+
+# =====================================================================
+# АВТОРИЗАЦИЯ АДМИНА
+# =====================================================================
 ADMIN_USERNAME = 'admin'
 ADMIN_PASSWORD = 'kazphosphate'
 ADMIN_TOKEN = 'kazphosphate-admin-token'
 
 def verify_admin_credentials(username: str, password: str) -> bool:
     return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
-
 
 def get_admin_authorization(authorization: str | None = Header(None)) -> str:
     if not authorization or not authorization.startswith('Bearer '):
@@ -45,17 +64,9 @@ def get_admin_authorization(authorization: str | None = Header(None)) -> str:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized')
     return token
 
-try:
-    from . import models
-    from .database import engine, get_db
-except ImportError:  # pragma: no cover - fallback for direct script execution
-    import models
-    from database import engine, get_db
-
-UPLOAD_DIR = BASE_DIR / "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-
+# =====================================================================
+# ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И МИГРАЦИИ
+# =====================================================================
 def add_missing_columns(engine):
     inspector = inspect(engine)
     existing_tables = set(inspector.get_table_names())
@@ -78,11 +89,12 @@ def add_missing_columns(engine):
             with engine.begin() as conn:
                 conn.execute(text(add_sql))
 
-
 models.Base.metadata.create_all(bind=engine)
 add_missing_columns(engine)
 
-
+# =====================================================================
+# ИНИЦИАЛИЗАЦИЯ FASTAPI И MIDDLEWARE
+# =====================================================================
 app = FastAPI(title="ТОО Казфосфат - Проверка знаний")
 
 app.add_middleware(
@@ -93,9 +105,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Подключение статических файлов (Загрузки и Фронтенд)
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
+if (FRONTEND_DIR / "js").exists():
+    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+if (FRONTEND_DIR / "css").exists():
+    app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
+if (FRONTEND_DIR / "images").exists():
+    app.mount("/images", StaticFiles(directory=str(FRONTEND_DIR / "images")), name="images")
 
+# =====================================================================
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+# =====================================================================
 def save_upload_file(upload_file: UploadFile | None) -> str | None:
     if not upload_file or not getattr(upload_file, "filename", None):
         return None
@@ -107,7 +129,6 @@ def save_upload_file(upload_file: UploadFile | None) -> str | None:
         shutil.copyfileobj(upload_file.file, buffer)
     return str(file_path).replace(str(BASE_DIR) + os.sep, "")
 
-
 def safe_json_loads(val):
     if isinstance(val, (list, dict)):
         return val
@@ -116,32 +137,26 @@ def safe_json_loads(val):
     except Exception:
         return []
 
-
-import os
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-
-# Инициализация FastAPI
-app = FastAPI()
-
-# 1. Подключаем статические папки фронтенда (скрипты, стили)
-app.mount("/js", StaticFiles(directory="../frontend/js"), name="js")
-# если есть папки css или images, раскомментируй их:
-# app.mount("/css", StaticFiles(directory="../frontend/css"), name="css")
-# app.mount("/images", StaticFiles(directory="../frontend/images"), name="images")
-
-# 2. Главная страница (квиз)
+# =====================================================================
+# РАЗДАЧА HTML СТРАНИЦ
+# =====================================================================
 @app.get("/")
 async def serve_index():
-    return FileResponse("../frontend/index.html")
+    index_file = FRONTEND_DIR / "index.html"
+    if not index_file.exists():
+        raise HTTPException(status_code=404, detail="Файл index.html не найден")
+    return FileResponse(index_file)
 
-# 3. Админка
 @app.get("/admin")
 async def serve_admin():
-    return FileResponse("../frontend/admin.html")
+    admin_file = FRONTEND_DIR / "admin.html"
+    if not admin_file.exists():
+        raise HTTPException(status_code=404, detail="Файл admin.html не найден")
+    return FileResponse(admin_file)
 
-
+# =====================================================================
+# API: ПОЛЬЗОВАТЕЛЬСКАЯ ЧАСТЬ
+# =====================================================================
 @app.get("/api/questions")
 def get_questions(category: str, lang: str = "ru", db: Session = Depends(get_db)):
     questions = db.query(models.Question).filter(models.Question.category == category).all()
@@ -150,14 +165,13 @@ def get_questions(category: str, lang: str = "ru", db: Session = Depends(get_db)
     for q in questions:
         raw_opts = q.options_ru if lang == "ru" else q.options_kk
         options = safe_json_loads(raw_opts)
-        text = q.text_ru if lang == "ru" else q.text_kk
+        text_content = q.text_ru if lang == "ru" else q.text_kk
         result.append({
             "id": q.id,
-            "text": text,
+            "text": text_content,
             "options": options
         })
     return result
-
 
 @app.post("/api/submit")
 async def submit_quiz(
@@ -240,13 +254,14 @@ async def submit_quiz(
         "details": details
     }
 
-
+# =====================================================================
+# API: АДМИН-ПАНЕЛЬ
+# =====================================================================
 @app.post('/api/admin/login')
 def admin_login(username: str = Form(...), password: str = Form(...)):
     if not verify_admin_credentials(username, password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     return {'token': ADMIN_TOKEN}
-
 
 @app.get("/api/admin/results")
 def get_results_admin(request: Request, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
@@ -285,7 +300,6 @@ def get_results_admin(request: Request, db: Session = Depends(get_db), admin_aut
         
     return output
 
-
 @app.delete("/api/admin/results/{r_id}")
 def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
     res = db.query(models.TestResult).filter(models.TestResult.id == r_id).first()
@@ -294,7 +308,6 @@ def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = De
     db.delete(res)
     db.commit()
     return {"status": "success"}
-
 
 @app.get("/api/admin/results/export/csv")
 def export_results_csv(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
@@ -332,7 +345,6 @@ def export_results_csv(db: Session = Depends(get_db), admin_auth: str = Depends(
     response.headers["Content-Disposition"] = "attachment; filename=kazphosphate_results.csv"
     return response
 
-
 @app.get("/api/admin/questions")
 def get_all_questions_admin(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
     questions = db.query(models.Question).all()
@@ -348,7 +360,6 @@ def get_all_questions_admin(db: Session = Depends(get_db), admin_auth: str = Dep
             "correct_option_index": q.correct_option_index
         })
     return output
-
 
 @app.post("/api/admin/questions")
 def add_question(
@@ -376,7 +387,6 @@ def add_question(
     db.refresh(new_q)
     return {"status": "success", "question_id": new_q.id}
 
-
 @app.delete("/api/admin/questions/{q_id}")
 def delete_question(q_id: int, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
     q = db.query(models.Question).filter(models.Question.id == q_id).first()
@@ -386,11 +396,9 @@ def delete_question(q_id: int, db: Session = Depends(get_db), admin_auth: str = 
     db.commit()
     return {"status": "success"}
 
-
 # =====================================================================
-# РЕДАКТИРОВАНИЕ КАРТЫ ДОПУСКА С УЧЕТОМ НОВЫХ ПОЛЕЙ
+# API: КАРТЫ ДОПУСКА
 # =====================================================================
-
 def calculate_expiry_date(start_date: date, category: str) -> date:
     """
     A (Постоянный) — 1 год
@@ -406,7 +414,6 @@ def calculate_expiry_date(start_date: date, category: str) -> date:
         return start_date + relativedelta(days=1)
     return start_date + relativedelta(years=1)
 
-
 class PassCardUpdateSchema(BaseModel):
     full_name: Optional[str] = None
     iin: Optional[str] = None
@@ -421,14 +428,12 @@ class PassCardUpdateSchema(BaseModel):
     category: Optional[str] = None
     issue_date: Optional[date] = None
 
-
 @app.get("/api/passes/{pass_id}")
 def get_pass_card(pass_id: int, db: Session = Depends(get_db)):
     card = db.query(models.PassCard).filter(models.PassCard.id == pass_id).first()
     if not card:
         raise HTTPException(status_code=404, detail="Пропуск не найден")
     return card
-
 
 @app.put("/api/passes/{pass_id}")
 def update_pass_card(
