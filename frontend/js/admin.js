@@ -1,6 +1,6 @@
 let globalResults = [];
 let adminToken = '';
-const API_BASE = 'http://127.0.0.1:8001';
+const API_BASE = ''; // Относительный путь для работы на хостинге
 
 const positionNames = {
     'dumper': 'Водитель карьерного самосвала',
@@ -92,7 +92,7 @@ async function loginAdmin(e) {
 }
 
 // ------------------------------------------------------------------
-// 1. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОКВ АДМИНКЕ
+// 1. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК В АДМИНКЕ
 // ------------------------------------------------------------------
 function switchTab(tab) {
     const activeClass = "px-4 py-2 font-bold rounded bg-kpp-navy text-white text-xs uppercase tracking-wider";
@@ -171,9 +171,8 @@ async function loadResults() {
 }
 
 // ------------------------------------------------------------------
-// 3. УПРАВЛЕНИЕ КАРТОЙ ДОПУСКА С НОВЫМИ ПОЛЯМИ
+// 3. УПРАВЛЕНИЕ КАРТОЙ ДОПУСКА
 // ------------------------------------------------------------------
-
 function openBadgeModal(index) {
     const res = globalResults[index];
     if (!res) return;
@@ -281,7 +280,6 @@ function showFinalBadge(card, passId) {
     document.getElementById('badge-dates').innerText = `с ${issueFormatted} по ${expiryFormatted}`;
     document.getElementById('badge-issued-datetime').innerText = `${issueFormatted} ${card.issued_time || '08:30'}`;
 
-    // Категории
     const catTitle = document.getElementById('badge-category-title');
     const catSub = document.getElementById('badge-category-sub');
     if (card.category === 'B') {
@@ -298,11 +296,9 @@ function showFinalBadge(card, passId) {
         catSub.innerText = 'ПОСТОЯННЫЙ';
     }
 
-    // Штрих-код
     const rawDate = (card.issue_date || '').replace(/-/g, '');
     document.getElementById('badge-barcode').innerText = `${badgeNum}-${rawDate}`;
 
-    // Фото
     const photoElem = document.getElementById('badge-photo');
     photoElem.src = res.photo_user || 'https://via.placeholder.com/200x260?text=НЕТ+ФОТО';
 
@@ -314,7 +310,7 @@ function closeBadgeModal() {
 }
 
 // ------------------------------------------------------------------
-// 4. ЗАГРУЗКА И УДАЛЕНИЕ ВОПРОСОВ В БАЗЕ
+// 4. ЗАГРУЗКА И УДАЛЕНИЕ ВОПРОСОВ
 // ------------------------------------------------------------------
 async function loadQuestionsList() {
     try {

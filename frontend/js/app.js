@@ -177,7 +177,7 @@ async function loadQuestions() {
     }
 
     try {
-        const response = await fetch('/api/questions');
+        const response = await fetch(`/api/questions?category=${category}&lang=${currentLang}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
