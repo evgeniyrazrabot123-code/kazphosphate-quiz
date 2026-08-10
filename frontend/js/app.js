@@ -27,7 +27,7 @@ const positionNames = {
 
 const translations = {
     ru: {
-        subHeader: 'Система ации персонала и оценки производственных допусков',
+        subHeader: 'Система аттестации персонала и оценки производственных допусков',
         sec1Title: 'Раздел 1. Данные сотрудника',
         lblFio: '1. Фамилия, имя, отчество (полностью)',
         lblIin: '2. ИИН сотрудника',
@@ -39,7 +39,7 @@ const translations = {
         sec2Title: 'Раздел 2. Проверка профессиональных знаний',
         btnBack: '← Назад',
         btnSubmit: 'Подтвердить и отправить результаты',
-        resTitle: 'Тестирования успешно пройдена',
+        resTitle: 'Тестирование успешно пройдено',
         resDesc: 'Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».',
         btnRestart: 'Завершить сессию',
         sendingText: 'Отправка данных...'
@@ -109,10 +109,6 @@ async function goToStep2() {
     const phone = document.getElementById('phone')?.value.trim();
     const birthDate = document.getElementById('birth_date')?.value;
     const citizenship = document.getElementById('citizenship')?.value.trim();
-
-    const photoUser = document.getElementById('photo_user')?.files.length;
-    const photoLic = document.getElementById('photo_license')?.files.length;
-    const photoId = document.getElementById('photo_id_card')?.files.length;
 
     if (!fullName) {
         alert(currentLang === 'ru' ? 'Пожалуйста, введите ФИО полностью!' : 'Өтініш, Т.А.Ә. толық енгізіңіз!');
@@ -287,7 +283,8 @@ async function handleFormSubmit(e) {
 
         formData.append('answers', JSON.stringify(userAnswers));
 
-        const response = await fetch(`/api/questions?category=${category}&lang=${lang}`, {
+        // ✅ ИСПРАВЛЕНИЕ: правильный адрес /api/submit
+        const response = await fetch('/api/submit', {
             method: 'POST',
             body: formData
         });
