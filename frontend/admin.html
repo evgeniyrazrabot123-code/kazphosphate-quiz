@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full bg-[#F4F6F9]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель руководителя — ТОО «Казфосфат»</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Open Sans', 'sans-serif'] },
+                    colors: {
+                        kpp: {
+                            navy: '#002B49',
+                            red: '#C8102E',
+                            border: '#CBD5E1',
+                            bg: '#F4F6F9',
+                            muted: '#64748B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Open Sans', sans-serif; background-color: #F4F6F9; }
+        .kpp-input { background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 4px; color: #0F1E36; font-size: 13px; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #badge-modal-content, #badge-modal-content * { visibility: visible; }
+            #badge-modal-content { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-full text-slate-800 text-xs antialiased p-4 sm:p-6">
+
+    <!-- Экран авторизации -->
+    <div id="admin-login-screen" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-4">
+            <h1 class="text-2xl font-bold text-slate-900">Вход в админку</h1>
+            <form id="login-form" class="space-y-4" onsubmit="loginAdmin(event)">
+                <input id="admin-login" type="text" value="admin" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Логин">
+                <input id="admin-password" type="password" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Пароль">
+                <button type="submit" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded uppercase text-xs">Войти</button>
+                <p id="login-error" class="hidden text-sm text-red-600"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Основное приложение админки -->
+    <div id="admin-app" class="max-w-[1140px] mx-auto space-y-4 hidden">
+        <header class="bg-white border rounded-md p-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="images/logo.png" alt="Казфосфат" class="w-10 h-10 object-contain">
+                <div>
+                    <h1 class="font-bold text-sm text-slate-900 uppercase">Панель руководителя — ТОО «Казфосфат»</h1>
+                    <p class="text-[11px] text-slate-500">Управление базой знаний, реестр тестирования и генерация допусков</p>
+                </div>
+            </div>
+            <button onclick="downloadCSV()" class="px-4 py-2 bg-emerald-700 text-white font-bold rounded text-xs uppercase">
+                📥 Выгрузить результаты в Excel (CSV)
+            </button>
+        </header>
+
+        <!-- Вкладки -->
+        <div class="flex space-x-2 border-b pb-2">
+            <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase">Результаты сотрудников</button>
+            <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase">Вопросы в базе</button>
+            <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase">+ Добавить вопрос</button>
+        </div>
+
+        <!-- Таблица результатов -->
+        <div id="tab-results" class="bg-white border rounded-md p-4">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-100 font-bold uppercase border-b">
+                        <th class="p-2.5 border-r">Дата</th>
+                        <th class="p-2.5 border-r">ФИО</th>
+                        <th class="p-2.5 border-r">Должность</th>
+                        <th class="p-2.5 border-r">Результат</th>
+                        <th class="p-2.5 border-r">Документы</th>
+                        <th class="p-2.5 text-center border-r">Допуск</th>
+                        <th class="p-2.5 text-center">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table-body" class="divide-y"></tbody>
+            </table>
+        </div>
+
+        <!-- Таблица вопросов -->
+        <div id="tab-questions-list" class="hidden bg-white border rounded-md p-4">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-100 font-bold uppercase border-b">
+                        <th class="p-2.5 w-12 border-r">ID</th>
+                        <th class="p-2.5 w-36 border-r">Специальность</th>
+                        <th class="p-2.5 border-r">Вопрос (RU / KK)</th>
+                        <th class="p-2.5 border-r">Варианты ответов</th>
+                        <th class="p-2.5 text-center border-r">Правильный</th>
+                        <th class="p-2.5 text-center">Удаление</th>
+                    </tr>
+                </thead>
+                <tbody id="questions-table-body" class="divide-y"></tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления вопроса -->
+        <div id="tab-add-question" class="hidden bg-white border rounded-md p-6">
+            <form id="add-question-form" onsubmit="submitQuestion(event)" class="max-w-2xl space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-1">Специальность (Категория):</label>
+                    <select id="q_category" class="w-full px-3 py-2 kpp-input">
+                        <option value="dumper">Водитель карьерного самосвала</option>
+                        <option value="car_driver">Водитель легкового автомобиля</option>
+                        <option value="truck_driver">Водитель грузового автомобиля</option>
+                        <option value="bus_driver">Водитель автобуса</option>
+                        <option value="trailer_driver">Водитель автомобиля с прицепом</option>
+                        <option value="fuel_driver">Водитель топливозаправщика</option>
+                        <option value="dopog_driver">Водитель (ДОПОГ)</option>
+                        <option value="excavator">Машинист экскаватора</option>
+                        <option value="loader">Машинист фронтального погрузчика</option>
+                        <option value="bulldozer">Машинист бульдозера</option>
+                        <option value="grader">Машинист автогрейдера</option>
+                        <option value="roller">Машинист дорожного катка</option>
+                        <option value="telehandler">Машинист телескопического погрузчика</option>
+                        <option value="drilling_rig">Машинист буровой установки</option>
+                        <option value="operator">Оператор технологического оборудования</option>
+                        <option value="auto_mechanic">Слесарь по ремонту автомобилей</option>
+                        <option value="machinery_mechanic">Слесарь по ремонту самоходной техники</option>
+                        <option value="mechanic">Механик участка</option>
+                        <option value="foreman">Мастер участка</option>
+                        <option value="other">Другая должность</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold uppercase mb-1">Вопрос (RU):</label><textarea id="q_text_ru" required class="w-full px-3 py-2 kpp-input" rows="3"></textarea></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Вопрос (KK):</label><textarea id="q_text_kk" required class="w-full px-3 py-2 kpp-input" rows="3"></textarea></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты RU (через запятую):</label><input type="text" id="q_options_ru" required class="w-full px-3 py-2 kpp-input"></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты KK (через запятую):</label><input type="text" id="q_options_kk" required class="w-full px-3 py-2 kpp-input"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-1">Индекс правильного ответа (с 0):</label>
+                    <input type="number" id="q_correct_idx" min="0" value="0" required class="w-full px-3 py-2 kpp-input">
+                </div>
+                <button type="submit" class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-xs uppercase">Сохранить вопрос</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПЕЧАТИ (ОБНОВЛЕННЫЙ МАКЕТ) -->
+    <div id="badge-modal" onclick="if(event.target === this) closeBadgeModal()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div id="badge-modal-content" class="bg-white text-slate-900 rounded-lg max-w-4xl w-full p-5 space-y-4 shadow-2xl relative border border-slate-300 my-4">
+            
+            <!-- Верхняя панель управления -->
+            <div class="flex justify-between items-center no-print border-b pb-3">
+                <span class="text-sm font-bold uppercase text-slate-700">Электронная карта допуска персонала</span>
+                <div class="flex space-x-2">
+                    <button onclick="window.print()" class="px-4 py-1.5 bg-blue-700 text-white font-bold text-xs rounded hover:bg-blue-800 transition">🖨 Печать / PDF</button>
+                    <button onclick="closeBadgeModal()" class="px-3 py-1 bg-slate-200 font-bold rounded hover:bg-slate-300 transition">✕</button>
+                </div>
+            </div>
+
+            <!-- ЛИЦЕВАЯ СТОРОНА -->
+            <div class="border-2 border-slate-900 rounded overflow-hidden bg-white text-xs">
+                
+                <!-- Шапка пропуска (Логотип увеличен) -->
+                <div class="bg-[#002B49] text-white p-3 flex justify-between items-center border-b-4 border-[#C8102E]">
+                    <div class="flex items-center space-x-3">
+                        <!-- Увеличенный логотип -->
+                        <div class="w-14 h-14 bg-white p-1 rounded-md flex items-center justify-center shrink-0 shadow-sm">
+                            <img src="images/logo.png" alt="Logo" class="max-h-full max-w-full object-contain">
+                        </div>
+                        <div>
+                            <h2 class="font-black text-xl tracking-wider text-white leading-none">KAZPHOSPHATE</h2>
+                            <p class="text-xs text-slate-300 uppercase mt-1">ТОО «КАЗФОСФАТ»</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <h3 class="font-black text-2xl text-white tracking-widest uppercase leading-none">ДОПУСК</h3>
+                        <p class="text-[10px] text-slate-300 uppercase mt-1">НА ПРАВО ВЪЕЗДА И ВЫПОЛНЕНИЯ РАБОТ<br>НА ТЕРРИТОРИИ КАРЬЕРА</p>
+                    </div>
+
+                    <div class="bg-[#C8102E] text-white px-4 py-2 rounded text-right font-mono">
+                        <span class="text-[10px] block font-bold">№</span>
+                        <span id="badge-num" class="font-black text-xl">000002</span>
+                    </div>
+                </div>
+
+                <!-- Основная сетка данных (Шрифты увеличены) -->
+                <div class="p-4 grid grid-cols-12 gap-4 bg-white">
+                    <div class="col-span-3 border border-slate-300 rounded overflow-hidden bg-slate-100 aspect-[3/4] flex items-center justify-center">
+                        <img id="badge-photo" src="" alt="Фото" class="w-full h-full object-cover">
+                    </div>
+
+                    <div class="col-span-5 space-y-1.5 text-slate-900 text-xs">
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Ф.И.О.:</span><span id="badge-fio" class="col-span-7 font-black text-sm"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">ИИН:</span><span id="badge-iin" class="col-span-7 font-mono font-bold text-xs"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Должность:</span><span id="badge-pos" class="col-span-7 font-bold text-xs"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Организация:</span><span id="badge-organization" class="col-span-7 font-bold text-xs"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Табельный №:</span><span id="badge-personnel-num" class="col-span-7 font-bold text-xs"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Вид работ:</span><span id="badge-work-type" class="col-span-7 font-bold text-xs"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Разрешенная зона доступа:</span><span id="badge-access-zone" class="col-span-7 font-bold text-xs"></span></div>
+                        <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Транспортное средство:</span><span id="badge-vehicle" class="col-span-7 font-bold text-xs"></span></div>
+                    </div>
+
+                    <div class="col-span-4 space-y-2.5 border-l pl-4">
+                        <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase block">СРОК ДЕЙСТВИЯ</span>
+                            <span id="badge-dates" class="font-bold text-slate-900 text-sm block mt-0.5"></span>
+                        </div>
+
+                        <div class="bg-slate-50 p-2.5 rounded border border-slate-200 text-center">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase block">КАТЕГОРИЯ ДОПУСКА</span>
+                            <span id="badge-category-title" class="font-black text-2xl text-emerald-700 block">A</span>
+                            <span id="badge-category-sub" class="font-bold text-xs uppercase block">ПОСТОЯННЫЙ</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <div class="w-14 h-14 border p-0.5 rounded"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=KAZPHOSPHATE-PERMIT" class="w-full h-full"></div>
+                            <div class="text-[10px]">
+                                <span class="text-slate-500 font-bold block">ДОПУСК ВЫДАН</span>
+                                <span id="badge-issued-datetime" class="font-bold text-xs block"></span>
+                            </div>
+                        </div>
+
+                        <div class="text-xs pt-1">
+                            <span class="text-slate-500 font-bold block">Выдал: Ответственный за БДД</span>
+                            <span id="badge-responsible" class="font-bold block text-sm">Ильясов Д.С.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Нижняя плашка (Без KP-) -->
+                <div class="bg-[#002B49] text-white p-2 px-3 flex justify-between items-center text-xs">
+                    <span class="font-black text-xs text-[#C8102E] bg-white px-2 py-0.5 rounded">⛰ КАРЬЕР</span>
+                    <span class="font-semibold">🛡 Используй СИЗ</span>
+                    <span class="font-semibold">🚗 Пристегни ремень</span>
+                    <span class="font-semibold">⏱ Соблюдай скорость</span>
+                    <span class="font-semibold">📵 Не используй телефон за рулем</span>
+                    <span id="badge-barcode" class="font-mono font-bold text-slate-200 bg-slate-800 px-2 py-0.5 rounded">000002-20260809</span>
+                </div>
+            </div>
+
+            <!-- ОБРАТНАЯ СТОРОНА (Увеличен шрифт) -->
+            <div class="border border-slate-300 rounded p-4 bg-white text-xs space-y-3">
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-4 space-y-1.5 border-r pr-3">
+                        <span class="font-bold uppercase text-slate-700 block border-b pb-1 text-xs">КАТЕГОРИИ ДОПУСКА</span>
+                        <div class="flex space-x-2 items-center"><span class="bg-emerald-600 text-white font-bold px-2 py-0.5 rounded text-xs">A</span><div><b class="text-xs">ПОСТОЯННЫЙ</b><br><span class="text-[9px] text-slate-500">Работникам ТОО «КАЗФОСФАТ». До 1 года.</span></div></div>
+                        <div class="flex space-x-2 items-center"><span class="bg-amber-500 text-white font-bold px-2 py-0.5 rounded text-xs">B</span><div><b class="text-xs">ВРЕМЕННЫЙ</b><br><span class="text-[9px] text-slate-500">Подрядным организациям. До 90 дней.</span></div></div>
+                        <div class="flex space-x-2 items-center"><span class="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-xs">C</span><div><b class="text-xs">РАЗОВЫЙ</b><br><span class="text-[9px] text-slate-500">Посетителям. До 24 часов.</span></div></div>
+                    </div>
+
+                    <div class="col-span-4 space-y-1.5 border-r pr-3">
+                        <span class="font-bold uppercase text-slate-700 block border-b pb-1 text-xs">РАЗРЕШЕННЫЕ ЗОНЫ ДОСТУПА</span>
+                        <div class="grid grid-cols-2 gap-1.5 text-xs">
+                            <div>✅ Карьер</div><div>☐ Склад ВМ</div>
+                            <div>✅ Отвалы</div><div>☐ Ж/Д парк</div>
+                            <div>✅ Бункер</div><div>✅ АЗС</div>
+                            <div>✅ Производственная пл.</div><div>✅ Адм. территория</div>
+                        </div>
+                    </div>
+
+                    <div class="col-span-4 space-y-1">
+                        <span class="font-bold uppercase text-slate-700 block border-b pb-1 text-xs">ПРАВИЛА ПОВЕДЕНИЯ</span>
+                        <ul class="text-[10px] space-y-1 text-slate-700">
+                            <li>• Соблюдай требования ПБ и охраны труда</li>
+                            <li>• Соблюдай скоростной режим и ПДД</li>
+                            <li>• Используй средства индивидуальной защиты (СИЗ)</li>
+                            <li>• Движение только по утвержденным маршрутам</li>
+                            <li>• Запрещена перевозка людей вне предусмотренных мест</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white text-[10px] p-1.5 text-center font-bold uppercase rounded tracking-wide">
+                    БЕЗОПАСНОСТЬ – НАШ ПРИОРИТЕТ! СОБЛЮДАЙ ПРАВИЛА – СОХРАНИ ЖИЗНЬ!
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
+    <div id="passEditModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white text-slate-900 rounded-xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative border border-slate-300 my-8">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800">🪪 Редактирование карты допуска</h3>
+                <button onclick="closePassModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
+            </div>
+
+            <form id="passEditForm" onsubmit="savePassCard(event)" class="space-y-3">
+                <input type="hidden" id="editPassId">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Ф.И.О.:</label><input type="text" id="editFullName" required class="w-full p-2 border rounded kpp-input"></div>
+                    <div><label class="block text-xs font-semibold mb-1">ИИН:</label><input type="text" id="editIin" class="w-full p-2 border rounded kpp-input"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Должность:</label><input type="text" id="editPosition" required class="w-full p-2 border rounded kpp-input"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Организация:</label><input type="text" id="editOrganization" value="ТОО «КАЗФОСФАТ»" class="w-full p-2 border rounded kpp-input"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Табельный №:</label><input type="text" id="editPersonnelNum" value="КР-07854" class="w-full p-2 border rounded kpp-input"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Время выдачи:</label><input type="text" id="editIssuedTime" value="08:30" class="w-full p-2 border rounded kpp-input"></div>
+                </div>
+
+                <div><label class="block text-xs font-semibold mb-1">Вид работ:</label><input type="text" id="editWorkType" value="Производственный контроль, безопасность дорожного движения" class="w-full p-2 border rounded kpp-input"></div>
+                <div><label class="block text-xs font-semibold mb-1">Разрешенная зона доступа:</label><input type="text" id="editAccessZone" value="Карьер, ДСК, Отвалы, Бункер, Производственная площадка" class="w-full p-2 border rounded kpp-input"></div>
+                <div><label class="block text-xs font-semibold mb-1">Транспортное средство:</label><input type="text" id="editVehicle" value="—" class="w-full p-2 border rounded kpp-input"></div>
+
+                <div class="bg-slate-50 p-3 rounded border space-y-2">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold mb-1">Категория допуска:</label>
+                            <select id="editCategory" onchange="calculateExpiryPreview()" class="w-full p-2 border rounded font-bold bg-white">
+                                <option value="A">Категория A (Постоянный — 1 год)</option>
+                                <option value="B">Категория B (Временный — 90 дней)</option>
+                                <option value="C">Категория C (Разовый — 24 часа)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold mb-1">Дата выдачи:</label>
+                            <input type="date" id="editIssueDate" onchange="calculateExpiryPreview()" class="w-full p-2 border rounded bg-white">
+                        </div>
+                    </div>
+                    <div class="text-xs">Срок действия до: <strong id="expiryPreviewText" class="text-emerald-600">--.--.----</strong></div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePassModal()" class="px-4 py-2 border bg-white rounded font-medium text-xs">Отмена</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded font-bold text-xs">Сохранить и Открыть допуск</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

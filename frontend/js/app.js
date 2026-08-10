@@ -1,0 +1,390 @@
+let currentLang = 'ru';
+let loadedQuestions = [];
+
+// Все 20 специальностей ТОО «Казфосфат»
+const positionNames = {
+    'dumper': 'Водитель карьерного самосвала',
+    'car_driver': 'Водитель легкового автомобиля',
+    'truck_driver': 'Водитель грузового автомобиля',
+    'bus_driver': 'Водитель автобуса',
+    'trailer_driver': 'Водитель автомобиля с прицепом',
+    'fuel_driver': 'Водитель топливозаправщика',
+    'dopog_driver': 'Водитель (ДОПОГ)',
+    'excavator': 'Машинист экскаватора',
+    'loader': 'Машинист фронтального погрузчика',
+    'bulldozer': 'Машинист бульдозера',
+    'grader': 'Машинист автогрейдера',
+    'roller': 'Машинист дорожного катка',
+    'telehandler': 'Машинист телескопического погрузчика',
+    'drilling_rig': 'Машинист буровой установки',
+    'operator': 'Оператор технологического оборудования',
+    'auto_mechanic': 'Слесарь по ремонту автомобилей',
+    'machinery_mechanic': 'Слесарь по ремонту самоходной техники',
+    'mechanic': 'Механик участка',
+    'foreman': 'Мастер участка',
+    'other': 'Другая должность'
+};
+
+const translations = {
+    ru: {
+        subHeader: 'Система ации персонала и оценки производственных допусков',
+        sec1Title: 'Раздел 1. Данные сотрудника',
+        lblFio: '1. Фамилия, имя, отчество (полностью)',
+        lblIin: '2. ИИН сотрудника',
+        lblPhone: '3. Контактный телефон',
+        lblBirth: '4. Дата рождения',
+        lblCitizenship: '5. Гражданство',
+        lblPos: '6. Специальность / Должность',
+        btnNext: 'Перейти к тестированию →',
+        sec2Title: 'Раздел 2. Проверка профессиональных знаний',
+        btnBack: '← Назад',
+        btnSubmit: 'Подтвердить и отправить результаты',
+        resTitle: 'Тестирования успешно пройдена',
+        resDesc: 'Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».',
+        btnRestart: 'Завершить сессию',
+        sendingText: 'Отправка данных...'
+    },
+    kk: {
+        subHeader: 'Персоналды тестирования және өндірістік рұқсаттарды бағалау жүйесі',
+        sec1Title: '1-Бөлім. Қызметкердің мәліметтері',
+        lblFio: '1. Тегі, аты, әкесінің аты (толық)',
+        lblIin: '2. Қызметкердің ЖСН',
+        lblPhone: '3. Байланыс телефоны',
+        lblBirth: '4. Туған күні',
+        lblCitizenship: '5. Азаматтығы',
+        lblPos: '6. Мамандығы / Лауазымы',
+        btnNext: 'Тестке өту →',
+        sec2Title: '2-Бөлім. Кәсіби білімді тексеру',
+        btnBack: '← Артқа',
+        btnSubmit: 'Растау және нәтижені жіберу',
+        resTitle: 'Тестирование сәтті өтті',
+        resDesc: 'Мәліметтер «Қазфосфат» ЖШС біліктілік комиссиясының хаттамасында тіркелді.',
+        btnRestart: 'Сессияны аяқтау',
+        sendingText: 'Жіберілуде...'
+    }
+};
+
+// 1. МУЛЬТИЯЗЫЧНОСТЬ
+function setLanguage(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    if (!t) return;
+
+    if (document.getElementById('sub-header')) document.getElementById('sub-header').innerText = t.subHeader;
+    if (document.getElementById('sec1-title')) document.getElementById('sec1-title').innerText = t.sec1Title;
+    if (document.getElementById('lbl-fio')) document.getElementById('lbl-fio').innerText = t.lblFio;
+    if (document.getElementById('lbl-iin')) document.getElementById('lbl-iin').innerText = t.lblIin;
+    if (document.getElementById('lbl-phone')) document.getElementById('lbl-phone').innerText = t.lblPhone;
+    if (document.getElementById('lbl-birth')) document.getElementById('lbl-birth').innerText = t.lblBirth;
+    if (document.getElementById('lbl-citizenship')) document.getElementById('lbl-citizenship').innerText = t.lblCitizenship;
+    if (document.getElementById('lbl-pos')) document.getElementById('lbl-pos').innerText = t.lblPos;
+    if (document.getElementById('btn-next')) document.getElementById('btn-next').innerText = t.btnNext;
+    if (document.getElementById('sec2-title')) document.getElementById('sec2-title').innerText = t.sec2Title;
+    if (document.getElementById('btn-back')) document.getElementById('btn-back').innerText = t.btnBack;
+    if (document.getElementById('btn-submit')) document.getElementById('btn-submit').innerText = t.btnSubmit;
+    if (document.getElementById('res-title')) document.getElementById('res-title').innerText = t.resTitle;
+    if (document.getElementById('res-desc')) document.getElementById('res-desc').innerText = t.resDesc;
+    if (document.getElementById('btn-restart')) document.getElementById('btn-restart').innerText = t.btnRestart;
+
+    const btnRu = document.getElementById('btn-ru');
+    const btnKk = document.getElementById('btn-kk');
+    if (btnRu && btnKk) {
+        btnRu.className = lang === 'ru'
+            ? 'px-4 py-1.5 text-xs font-bold rounded-sm bg-kpp-navy text-white transition-all'
+            : 'px-4 py-1.5 text-xs font-bold rounded-sm text-kpp-muted hover:text-kpp-navy transition-all';
+        btnKk.className = lang === 'kk'
+            ? 'px-4 py-1.5 text-xs font-bold rounded-sm bg-kpp-navy text-white transition-all'
+            : 'px-4 py-1.5 text-xs font-bold rounded-sm text-kpp-muted hover:text-kpp-navy transition-all';
+    }
+
+    if (document.getElementById('step-2') && !document.getElementById('step-2').classList.contains('hidden')) {
+        loadQuestions();
+    }
+}
+
+// 2. ВАЛИДАЦИЯ
+async function goToStep2() {
+    const fullName = document.getElementById('full_name')?.value.trim();
+    const iin = document.getElementById('iin')?.value.trim();
+    const phone = document.getElementById('phone')?.value.trim();
+    const birthDate = document.getElementById('birth_date')?.value;
+    const citizenship = document.getElementById('citizenship')?.value.trim();
+
+    const photoUser = document.getElementById('photo_user')?.files.length;
+    const photoLic = document.getElementById('photo_license')?.files.length;
+    const photoId = document.getElementById('photo_id_card')?.files.length;
+
+    if (!fullName) {
+        alert(currentLang === 'ru' ? 'Пожалуйста, введите ФИО полностью!' : 'Өтініш, Т.А.Ә. толық енгізіңіз!');
+        document.getElementById('full_name')?.focus();
+        return;
+    }
+
+    if (!iin || iin.length !== 12 || isNaN(iin)) {
+        alert(currentLang === 'ru' ? 'ИИН должен состоять строго из 12 цифр!' : 'ЖСН қатаң түрде 12 саннан тұруы керек!');
+        document.getElementById('iin')?.focus();
+        return;
+    }
+
+    if (!phone || phone.length < 7) {
+        alert(currentLang === 'ru' ? 'Введите корректный номер телефона!' : 'Телефон нөмірін дұрыс енгізіңіз!');
+        document.getElementById('phone')?.focus();
+        return;
+    }
+
+    if (!birthDate) {
+        alert(currentLang === 'ru' ? 'Пожалуйста, укажите дату рождения!' : 'Өтініш, туған күніңізді көрсетіңіз!');
+        document.getElementById('birth_date')?.focus();
+        return;
+    }
+
+    if (!citizenship) {
+        alert(currentLang === 'ru' ? 'Пожалуйста, укажите ваше гражданство!' : 'Өтініш, азаматтығыңызды көрсетіңіз!');
+        document.getElementById('citizenship')?.focus();
+        return;
+    }
+
+    const loaded = await loadQuestions();
+
+    document.getElementById('step-1').classList.add('hidden');
+    document.getElementById('step-2').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (!loaded) {
+        const errorContainer = document.getElementById('questions-error');
+        if (errorContainer) {
+            errorContainer.classList.remove('hidden');
+        }
+    }
+}
+
+function goToStep1() {
+    document.getElementById('step-2').classList.add('hidden');
+    document.getElementById('step-1').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 3. ОТРИСОВКА ВОПРОСОВ
+async function loadQuestions() {
+    const category = document.getElementById('position').value;
+    const container = document.getElementById('questions-container');
+    const errorContainer = document.getElementById('questions-error');
+
+    container.innerHTML = '';
+    if (errorContainer) {
+        errorContainer.innerText = '';
+        errorContainer.classList.add('hidden');
+    }
+
+    try {
+        const response = await fetch('/api/questions');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        loadedQuestions = await response.json();
+
+        if (!Array.isArray(loadedQuestions) || loadedQuestions.length === 0) {
+            throw new Error('Вопросы не найдены');
+        }
+
+        loadedQuestions.forEach((q, idx) => {
+            const qBox = document.createElement('div');
+            qBox.className = "question-card p-4 rounded border border-kpp-border bg-slate-50/50 space-y-3";
+            qBox.setAttribute('data-id', q.id);
+
+            let optionsHtml = '';
+            q.options.forEach((opt, oIdx) => {
+                const radioId = `q_${q.id}_opt_${oIdx}`;
+                optionsHtml += `
+                    <div>
+                        <input type="radio" id="${radioId}" name="q_${q.id}" value="${oIdx}" class="hidden custom-radio">
+                        <label for="${radioId}" class="flex items-center p-3 border border-kpp-border rounded cursor-pointer hover:bg-white transition-all bg-white text-xs">
+                            <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center mr-3 shrink-0 dot-outer">
+                                <span class="w-2 h-2 rounded-full dot-inner scale-0 transition-transform"></span>
+                            </span>
+                            <span class="font-medium text-slate-800">${opt}</span>
+                        </label>
+                    </div>
+                `;
+            });
+
+            qBox.innerHTML = `
+                <p class="font-bold text-kpp-navy text-xs sm:text-sm"><span class="text-kpp-red mr-1.5">${idx + 1}.</span>${q.text}</p>
+                <div class="space-y-2">${optionsHtml}</div>
+            `;
+            container.appendChild(qBox);
+        });
+
+        return true;
+    } catch (err) {
+        console.error('Ошибка загрузки вопросов:', err);
+        if (errorContainer) {
+            errorContainer.innerText = currentLang === 'ru'
+                ? 'Не удалось загрузить вопросы. Попробуйте перезагрузить страницу или обратитесь к администратору.'
+                : 'Сұрақтарды жүктеу мүмкін болмады. Бетті қайта жүктеп көріңіз немесе әкімшіге хабарласыңыз.';
+            errorContainer.classList.remove('hidden');
+        } else {
+            alert(currentLang === 'ru'
+                ? 'Не удалось загрузить вопросы. Попробуйте перезагрузить страницу.'
+                : 'Сұрақтарды жүктеу мүмкін болмады. Бетті қайта жүктеп көріңіз.');
+        }
+        return false;
+    }
+}
+
+// 4. ОТПРАВКА ФОРМЫ
+async function handleFormSubmit(e) {
+    if (e) e.preventDefault();
+
+    const submitBtn = document.getElementById('btn-submit');
+    const originalBtnText = submitBtn ? submitBtn.innerText : 'ОТПРАВИТЬ';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = translations[currentLang]?.sendingText || 'Отправка...';
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('full_name', document.getElementById('full_name')?.value.trim() || '');
+        formData.append('birth_date', document.getElementById('birth_date')?.value || '');
+        formData.append('position', document.getElementById('position')?.value || '');
+        formData.append('iin', document.getElementById('iin')?.value.trim() || '');
+        formData.append('phone', document.getElementById('phone')?.value.trim() || '');
+        formData.append('citizenship', document.getElementById('citizenship')?.value.trim() || '');
+
+        const userPhoto = document.getElementById('photo_user')?.files[0];
+        if (userPhoto) formData.append('photo_user', userPhoto);
+
+        const licPhoto = document.getElementById('photo_license')?.files[0];
+        if (licPhoto) formData.append('photo_license', licPhoto);
+
+        const idCardPhoto = document.getElementById('photo_id_card')?.files[0];
+        if (idCardPhoto) formData.append('photo_id_card', idCardPhoto);
+
+        // Гарантированный сбор ответов по каждой карточке
+        const userAnswers = {};
+        const cards = document.querySelectorAll('.question-card');
+
+        cards.forEach(card => {
+            const qId = card.getAttribute('data-id');
+            const selected = card.querySelector(`input[name="q_${qId}"]:checked`);
+            if (selected) {
+                userAnswers[qId] = parseInt(selected.value, 10);
+            }
+        });
+
+        if (Object.keys(userAnswers).length < cards.length) {
+            alert(currentLang === 'ru' 
+                ? "Пожалуйста, ответьте на все вопросы перед отправкой!" 
+                : "Өтініш, барлық сұрақтарға жауап беріңіз!");
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalBtnText;
+            }
+            return;
+        }
+
+        formData.append('answers', JSON.stringify(userAnswers));
+
+        const response = await fetch('http://127.0.0.1:8001/api/submit', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ошибка сервера: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            document.getElementById('quiz-form')?.classList.add('hidden');
+            document.getElementById('video-instruction-block')?.classList.add('hidden');
+
+            const scoreBox = document.getElementById('score-box');
+            if (scoreBox) scoreBox.innerText = `${result.score} / ${result.total}`;
+
+            const detailsContainer = document.getElementById('results-details-container');
+            if (detailsContainer) {
+                detailsContainer.innerHTML = '';
+
+                if (result.details && result.details.length > 0) {
+                    result.details.forEach((item, index) => {
+                        const qText = currentLang === 'ru' ? item.text_ru : item.text_kk;
+                        const options = currentLang === 'ru' ? item.options_ru : item.options_kk;
+                        
+                        const userAnsText = options[item.user_answer] !== undefined ? options[item.user_answer] : '—';
+                        const correctAnsText = options[item.correct_answer] !== undefined ? options[item.correct_answer] : '—';
+
+                        const card = document.createElement('div');
+                        card.className = item.is_correct
+                            ? "p-3.5 rounded border border-emerald-200 bg-emerald-50/60 text-xs space-y-1.5 text-left"
+                            : "p-3.5 rounded border border-red-200 bg-red-50/60 text-xs space-y-1.5 text-left";
+
+                        const badge = item.is_correct
+                            ? `<span class="px-2 py-0.5 bg-emerald-700 text-white font-bold rounded text-[10px] uppercase shrink-0">Верно</span>`
+                            : `<span class="px-2 py-0.5 bg-kpp-red text-white font-bold rounded text-[10px] uppercase shrink-0">Ошибка</span>`;
+
+                        card.innerHTML = `
+                            <div class="flex justify-between items-start gap-2">
+                                <p class="font-bold text-kpp-navy"><span class="mr-1">${index + 1}.</span>${qText}</p>
+                                ${badge}
+                            </div>
+                            <div class="text-[11px] space-y-0.5 pt-1.5 border-t border-slate-200/60">
+                                <p class="${item.is_correct ? 'text-emerald-900' : 'text-red-900 font-semibold'}">
+                                    <strong>Ваш ответ:</strong> ${userAnsText}
+                                </p>
+                                ${!item.is_correct ? `<p class="text-emerald-800 font-semibold"><strong>Правильный ответ:</strong> ${correctAnsText}</p>` : ''}
+                            </div>
+                        `;
+
+                        detailsContainer.appendChild(card);
+                    });
+                }
+            }
+
+            document.getElementById('result-screen')?.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    } catch (err) {
+        console.error("Ошибка при отправке:", err);
+        alert('Не удалось отправить анкету. Проверьте соединение с сервером.');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalBtnText;
+        }
+    }
+}
+
+// 5. ИНИЦИАЛИЗАЦИЯ И ПРИВЯЗКА СОБЫТИЙ
+document.addEventListener('DOMContentLoaded', () => {
+    const quizForm = document.getElementById('quiz-form');
+    const nextButton = document.getElementById('btn-next');
+
+    if (quizForm) {
+        quizForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    if (nextButton) {
+        nextButton.removeAttribute('onclick');
+        nextButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            goToStep2();
+        });
+    }
+
+    ['photo_user', 'photo_license', 'photo_id_card'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('change', (e) => {
+                const parent = e.target.closest('div');
+                if (e.target.files.length > 0) {
+                    parent.classList.add('bg-emerald-50', 'border-emerald-500');
+                    parent.classList.remove('bg-slate-50', 'border-kpp-border');
+                }
+            });
+        }
+    });
+});
