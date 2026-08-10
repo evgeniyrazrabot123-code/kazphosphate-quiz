@@ -117,9 +117,29 @@ def safe_json_loads(val):
         return []
 
 
+import os
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# Инициализация FastAPI
+app = FastAPI()
+
+# 1. Подключаем статические папки фронтенда (скрипты, стили)
+app.mount("/js", StaticFiles(directory="../frontend/js"), name="js")
+# если есть папки css или images, раскомментируй их:
+# app.mount("/css", StaticFiles(directory="../frontend/css"), name="css")
+# app.mount("/images", StaticFiles(directory="../frontend/images"), name="images")
+
+# 2. Главная страница (квиз)
 @app.get("/")
-def read_root():
-    return {"status": "API работает успешно"}
+async def serve_index():
+    return FileResponse("../frontend/index.html")
+
+# 3. Админка
+@app.get("/admin")
+async def serve_admin():
+    return FileResponse("../frontend/admin.html")
 
 
 @app.get("/api/questions")
