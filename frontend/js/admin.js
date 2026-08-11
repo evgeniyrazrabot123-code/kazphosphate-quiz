@@ -55,7 +55,7 @@ function showAdminApp() {
 }
 
 // ------------------------------------------------------------------
-// 1. АВТОРИЗАЦИЯ (admin / kazphosphate)
+// 1. АВТОРИЗАЦИЯ
 // ------------------------------------------------------------------
 async function loginAdmin(e) {
     e.preventDefault();
@@ -98,8 +98,8 @@ async function loginAdmin(e) {
 // 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
 // ------------------------------------------------------------------
 function switchTab(tab) {
-    const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider";
-    const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-slate-900 bg-white border border-slate-300 text-xs uppercase tracking-wider";
+    const activeClass = "px-4 py-2.5 font-extrabold rounded-lg bg-[#002B49] text-white text-xs uppercase tracking-wider shadow-sm transition";
+    const inactiveClass = "px-4 py-2.5 font-extrabold rounded-lg text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 text-xs uppercase tracking-wider transition";
 
     document.getElementById('tab-results')?.classList.add('hidden');
     document.getElementById('tab-questions-list')?.classList.add('hidden');
@@ -124,7 +124,7 @@ function switchTab(tab) {
 }
 
 // ------------------------------------------------------------------
-// 3. ЗАГРУЗКА ИЗ БАЗЫ ДАННЫХ
+// 3. ЗАГРУЗКА РЕЗУЛЬТАТОВ ИЗ БД
 // ------------------------------------------------------------------
 async function loadResults() {
     try {
@@ -136,37 +136,37 @@ async function loadResults() {
         tbody.innerHTML = '';
 
         if (!Array.isArray(globalResults) || globalResults.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400 font-bold">Результаты в базе данных отсутствуют</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Результаты тестирования в базе данных отсутствуют</td></tr>`;
             return;
         }
 
         globalResults.forEach((res, index) => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50";
+            tr.className = "hover:bg-slate-50/80 transition-colors";
 
             const docs = [];
-            if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-700 underline font-bold">Фото 3x4</a>`);
-            if (res.photo_license) docs.push(`<a href="${res.photo_license}" target="_blank" class="text-blue-700 underline font-bold">Права</a>`);
-            if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-700 underline font-bold">Уд. Машиниста</a>`);
+            if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-600 hover:underline font-bold">Фото 3x4</a>`);
+            if (res.photo_license) docs.push(`<a href="${res.photo_license}" target="_blank" class="text-blue-600 hover:underline font-bold">Права</a>`);
+            if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-600 hover:underline font-bold">Уд. Машиниста</a>`);
 
             const docsHtml = docs.length > 0 ? docs.join(' | ') : '<span class="text-slate-400">Нет</span>';
             const prettyPosition = positionNames[res.position] || res.position;
 
             tr.innerHTML = `
-                <td class="p-2.5 border-r border-slate-200 font-mono text-[11px]">${res.passed_at}</td>
-                <td class="p-2.5 border-r border-slate-200 font-bold text-slate-900">${res.full_name}</td>
-                <td class="p-2.5 border-r border-slate-200">${prettyPosition}</td>
-                <td class="p-2.5 border-r border-slate-200 font-bold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">
+                <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
+                <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
+                <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
+                <td class="p-3 border-r border-slate-100 font-extrabold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">
                     ${res.score} / ${res.total_questions}
                 </td>
-                <td class="p-2.5 border-r border-slate-200">${docsHtml}</td>
-                <td class="p-2.5 text-center border-r border-slate-200">
-                    <button onclick="openBadgeModal(${index})" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase transition text-[10px]">
+                <td class="p-3 border-r border-slate-100">${docsHtml}</td>
+                <td class="p-3 text-center border-r border-slate-100">
+                    <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">
                         🪪 Пропуск
                     </button>
                 </td>
-                <td class="p-2.5 text-center">
-                    <button onclick="deleteResult(${res.id})" class="px-2.5 py-1 bg-red-100 hover:bg-red-600 text-red-700 hover:text-white rounded font-bold uppercase transition text-[10px]">
+                <td class="p-3 text-center">
+                    <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">
                         Удалить
                     </button>
                 </td>
@@ -219,21 +219,34 @@ async function exportResultsCSV() {
 }
 
 // ------------------------------------------------------------------
-// 4. КАРТА ДОПУСКА (ПЕЧАТЬ И РЕДАКТИРОВАНИЕ)
+// 4. КАРТА ДОПУСКА (БЕЙДЖ)
 // ------------------------------------------------------------------
 function openBadgeModal(index) {
     const res = globalResults[index];
     if (!res) return;
 
-    document.getElementById('editPassId').value = res.id;
-    document.getElementById('editFullName').value = res.full_name || '';
-    document.getElementById('editIin').value = res.iin || '';
-    document.getElementById('editPosition').value = positionNames[res.position] || res.position || '';
-    document.getElementById('editOrganization').value = 'ТОО «КАЗФОСФАТ»';
+    // Безопасное заполнение полей модального окна (даже если каких-то ID нет в HTML)
+    const passIdInput = document.getElementById('editPassId');
+    if (passIdInput) passIdInput.value = res.id;
+
+    const fullNameInput = document.getElementById('editFullName');
+    if (fullNameInput) fullNameInput.value = res.full_name || '';
+
+    const iinInput = document.getElementById('editIin');
+    if (iinInput) iinInput.value = res.iin || '';
+
+    const posInput = document.getElementById('editPosition');
+    if (posInput) posInput.value = positionNames[res.position] || res.position || '';
+
+    const orgInput = document.getElementById('editOrganization');
+    if (orgInput) orgInput.value = 'ТОО «КАЗФОСФАТ»';
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('editIssueDate').value = today;
-    document.getElementById('editCategory').value = 'A';
+    const issueDateInput = document.getElementById('editIssueDate');
+    if (issueDateInput) issueDateInput.value = today;
+
+    const catSelect = document.getElementById('editCategory');
+    if (catSelect) catSelect.value = 'A';
 
     calculateExpiryPreview();
     document.getElementById('passEditModal')?.classList.remove('hidden');
@@ -267,14 +280,14 @@ function calculateExpiryPreview() {
 async function savePassCard(e) {
     e.preventDefault();
 
-    const passId = document.getElementById('editPassId').value;
+    const passId = document.getElementById('editPassId')?.value;
     const payload = {
-        full_name: document.getElementById('editFullName').value,
-        iin: document.getElementById('editIin').value,
-        position: document.getElementById('editPosition').value,
-        organization: document.getElementById('editOrganization').value,
-        category: document.getElementById('editCategory').value,
-        issue_date: document.getElementById('editIssueDate').value
+        full_name: document.getElementById('editFullName')?.value || '',
+        iin: document.getElementById('editIin')?.value || '',
+        position: document.getElementById('editPosition')?.value || '',
+        organization: document.getElementById('editOrganization')?.value || 'ТОО «КАЗФОСФАТ»',
+        category: document.getElementById('editCategory')?.value || 'A',
+        issue_date: document.getElementById('editIssueDate')?.value || new Date().toISOString().split('T')[0]
     };
 
     try {
@@ -364,23 +377,23 @@ async function loadQuestionsList() {
 
         questions.forEach(q => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50";
+            tr.className = "hover:bg-slate-50 transition-colors";
 
             tr.innerHTML = `
-                <td class="p-2.5 border-r border-slate-200 font-mono text-[11px] text-slate-500">${q.id}</td>
-                <td class="p-2.5 border-r border-slate-200 font-bold text-slate-900">${positionNames[q.category] || q.category}</td>
-                <td class="p-2.5 border-r border-slate-200">
+                <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${q.id}</td>
+                <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${positionNames[q.category] || q.category}</td>
+                <td class="p-3 border-r border-slate-100">
                     <div class="font-bold text-slate-800 mb-0.5">${q.text_ru}</div>
                     <div class="text-slate-500 italic text-[11px]">${q.text_kk}</div>
                 </td>
-                <td class="p-2.5 border-r border-slate-200 text-slate-600">
+                <td class="p-3 border-r border-slate-100 text-slate-600 text-[11px]">
                     ${Array.isArray(q.options_ru) ? q.options_ru.join(', ') : q.options_ru}
                 </td>
-                <td class="p-2.5 border-r border-slate-200 text-center font-bold text-emerald-700">
-                    Индекс: ${q.correct_option_index}
+                <td class="p-3 border-r border-slate-100 text-center font-extrabold text-emerald-700">
+                    ${q.correct_option_index}
                 </td>
-                <td class="p-2.5 text-center">
-                    <button onclick="deleteQuestion(${q.id})" class="px-2.5 py-1 bg-red-100 hover:bg-red-600 text-red-700 hover:text-white rounded font-bold uppercase transition text-[10px]">
+                <td class="p-3 text-center">
+                    <button onclick="deleteQuestion(${q.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">
                         Удалить
                     </button>
                 </td>
@@ -411,21 +424,21 @@ async function deleteQuestion(id) {
 async function submitQuestion(e) {
     e.preventDefault();
 
-    const category = document.getElementById('q_category').value.trim();
-    const text_ru = document.getElementById('q_text_ru').value.trim();
-    const text_kk = document.getElementById('q_text_kk').value.trim();
+    const category = document.getElementById('q_category')?.value.trim();
+    const text_ru = document.getElementById('q_text_ru')?.value.trim();
+    const text_kk = document.getElementById('q_text_kk')?.value.trim();
     
-    const options_ru_arr = document.getElementById('q_options_ru').value
+    const options_ru_arr = document.getElementById('q_options_ru')?.value
         .split(',')
         .map(s => s.trim())
         .filter(s => s.length > 0);
 
-    const options_kk_arr = document.getElementById('q_options_kk').value
+    const options_kk_arr = document.getElementById('q_options_kk')?.value
         .split(',')
         .map(s => s.trim())
         .filter(s => s.length > 0);
     
-    const correct_idx = parseInt(document.getElementById('q_correct_idx').value, 10);
+    const correct_idx = parseInt(document.getElementById('q_correct_idx')?.value, 10);
 
     const formData = new FormData();
     formData.append('category', category);
@@ -444,7 +457,7 @@ async function submitQuestion(e) {
         const res = await response.json();
         if (res.status === 'success') {
             alert('Вопрос успешно сохранен в базу данных!');
-            document.getElementById('add-question-form').reset();
+            document.getElementById('add-question-form')?.reset();
             switchTab('questions_list');
         }
     } catch (err) {
