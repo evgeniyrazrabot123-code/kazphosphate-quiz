@@ -195,81 +195,87 @@ async def submit_quiz(
     full_name: str = Form(...),
     birth_date: str = Form(None),
     position: str = Form(...),
-    iin: Optional[str] = Form(None),        # ИИН сделан необязательным
+    iin: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
     citizenship: Optional[str] = Form(None),
     answers: str = Form(...),
     photo_user: UploadFile = File(None),
     photo_license: UploadFile = File(None),
-    photo_id_card: UploadFile = File(None),  # Удостоверение машиниста
+    photo_id_card: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    user_photo_path = save_upload_file(photo_user)
-    lic_photo_path = save_upload_file(photo_license)
-    id_card_photo_path = save_upload_file(photo_id_card)
-
-    employee = models.Employee(
-        full_name=full_name,
-        birth_date=birth_date,
-        position=position,
-        iin=iin,
-        phone=phone,
-        citizenship=citizenship,
-        photo_user_path=user_photo_path,
-        photo_license_path=lic_photo_path,
-        photo_id_card_path=id_card_photo_path,
-    )
-    db.add(employee)
-    db.commit()
-    db.refresh(employee)
-
     try:
-        answers_dict = json.loads(answers)
-    except Exception:
-        answers_dict = {}
+        # 1. Сохранение всех 3 типов сканов
+        user_photo_path = save_upload_file(photo_user)
+        lic_photo_path = save_upload_file(photo_license)
+        id_card_photo_path = save_upload_file(photo_id_card)
 
-    score = 0
-    details = []
+        # 2. Создание карточки сотрудника
+        employee = models.Employee(
+            full_name=full_name.strip() if full_name else "",
+            birth_date=birth_date,
+            position=position,
+            iin=iin.strip() if iin and iin.strip() else None,
+            phone=phone.strip() if phone else None,
+            citizenship=citizenship.strip() if citizenship else None,
+            photo_user_path=user_photo_path,
+            photo_license_path=lic_photo_path,
+            photo_id_card_path=id_card_photo_path,
+        )
+        db.add(employee)
+        db.commit()
+        db.refresh(employee)
 
-    for q_id_str, user_ans in answers_dict.items():
-        q = db.query(models.Question).filter(models.Question.id == int(q_id_str)).first()
-        if q:
-            user_ans_idx = int(user_ans)
-            opts_ru = safe_json_loads(q.options_ru)
-            opts_kk = safe_json_loads(q.options_kk)
-            
-            is_correct = (q.correct_option_index == user_ans_idx)
-            if is_correct:
-                score += 1
+        # 3. Парсинг и сверка ответов
+        answers_dict = json.loads(answers) if isinstance(answers, str) else answers
+        score = 0
+        details = []
 
-            details.append({
-                "question_id": q.id,
-                "text_ru": q.text_ru,
-                "text_kk": q.text_kk,
-                "user_answer": user_ans_idx,
-                "correct_answer": q.correct_option_index,
-                "is_correct": is_correct,
-                "options_ru": opts_ru,
-                "options_kk": opts_kk
-            })
+        for q_id_str, user_ans in answers_dict.items():
+            q = db.query(models.Question).filter(models.Question.id == int(q_id_str)).first()
+            if q:
+                user_ans_idx = int(user_ans)
+                opts_ru = safe_json_loads(q.options_ru)
+                opts_kk = safe_json_loads(q.options_kk)
+                
+                is_correct = (q.correct_option_index == user_ans_idx)
+                if is_correct:
+                    score += 1
 
-    total = len(details)
+                details.append({
+                    "question_id": q.id,
+                    "text_ru": q.text_ru,
+                    "text_kk": q.text_kk,
+                    "user_answer": user_ans_idx,
+                    "correct_answer": q.correct_option_index,
+                    "is_correct": is_correct,
+                    "options_ru": opts_ru,
+                    "options_kk": opts_kk
+                })
 
-    result = models.TestResult(
-        employee_id=employee.id,
-        score=score,
-        total_questions=total,
-    )
-    db.add(result)
-    db.commit()
+        total = len(details)
 
-    return {
-        "status": "success", 
-        "employee_id": employee.id, 
-        "score": score, 
-        "total": total,
-        "details": details
-    }
+        # 4. Запись результатов в таблицу test_results
+        test_result = models.TestResult(
+            employee_id=employee.id,
+            score=score,
+            total_questions=total,
+        )
+        db.add(test_result)
+        db.commit()
+
+        return {
+            "status": "success", 
+            "employee_id": employee.id, 
+            "score": score, 
+            "total": total,
+            "details": details
+        }
+
+    except Exception as e:
+        db.rollback()
+        print(f"❌ ОШИБКА ПРИ СОХРАНЕНИИ ТЕСТА: {e}")
+        raise HTTPException(status_code=500, detail=f"Не удалось сохранить результаты: {str(e)}")
 
 # =====================================================================
 # API: АДМИН-ПАНЕЛЬ
@@ -325,7 +331,7 @@ def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = De
     
     emp_id = res.employee_id
     
-    # Каскадное удаление
+    # Каскадное удаление результатов и связанных записей
     db.delete(res)
     db.commit()
 
