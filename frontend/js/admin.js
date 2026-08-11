@@ -1,6 +1,6 @@
 let globalResults = [];
 let adminToken = '';
-const API_BASE = ''; // Относительный путь для работы на хостинге
+const API_BASE = ''; // Относительный путь для хостинга
 
 const positionNames = {
     'dumper': 'Водитель карьерного самосвала',
@@ -121,7 +121,7 @@ function switchTab(tab) {
 }
 
 // ------------------------------------------------------------------
-// 2. ЗАГРУЗКА И ВЫВОД РЕЗУЛЬТАТОВ АТТЕСТАЦИИ
+// 2. ЗАГРУЗКА, УДАЛЕНИЕ И ЭКСПОРТ РЕЗУЛЬТАТОВ
 // ------------------------------------------------------------------
 async function loadResults() {
     try {
@@ -167,6 +167,48 @@ async function loadResults() {
         });
     } catch (err) {
         console.error("Ошибка загрузки результатов:", err);
+    }
+}
+
+// 🗑 ФУНКЦИЯ УДАЛЕНИЯ РЕЗУЛЬТАТА
+async function deleteResult(id) {
+    if (!confirm("Вы уверены, что хотите полностью удалить этот результат из базы данных?")) return;
+
+    try {
+        const response = await adminFetch(`/api/admin/results/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            loadResults(); // Перезагрузить список результатов
+        } else {
+            const errData = await response.json();
+            alert("Ошибка при удалении: " + (errData.detail || errData.message || "Не удалось удалить"));
+        }
+    } catch (err) {
+        console.error("Ошибка удаления:", err);
+        alert('Ошибка связи с сервером при попытке удаления');
+    }
+}
+
+// 📊 ФУНКЦИЯ ЭКСПОРТА РЕЗУЛЬТАТОВ В EXCEL / CSV
+async function exportResultsCSV() {
+    try {
+        const response = await adminFetch('/api/admin/results/export/csv');
+        if (!response.ok) throw new Error('Ошибка при скачивании файла');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `kazphosphate_results_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error("Ошибка экспорта CSV:", err);
+        alert('Не удалось выгрузить данные. Проверьте авторизацию или связь с сервером.');
     }
 }
 

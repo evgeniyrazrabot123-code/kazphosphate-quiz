@@ -50,15 +50,15 @@
             <form id="login-form" class="space-y-4" onsubmit="loginAdmin(event)">
                 <input id="admin-login" type="text" value="admin" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Логин">
                 <input id="admin-password" type="password" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Пароль">
-                <button type="submit" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded uppercase text-xs">Войти</button>
-                <p id="login-error" class="hidden text-sm text-red-600"></p>
+                <button type="submit" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded uppercase text-xs hover:bg-slate-800 transition">Войти</button>
+                <p id="login-error" class="hidden text-sm text-red-600 font-semibold"></p>
             </form>
         </div>
     </div>
 
     <!-- Основное приложение админки -->
     <div id="admin-app" class="max-w-[1140px] mx-auto space-y-4 hidden">
-        <header class="bg-white border rounded-md p-4 flex justify-between items-center">
+        <header class="bg-white border rounded-md p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center space-x-3">
                 <img src="images/logo.png" alt="Казфосфат" class="w-10 h-10 object-contain">
                 <div>
@@ -66,55 +66,56 @@
                     <p class="text-[11px] text-slate-500">Управление базой знаний, реестр тестирования и генерация допусков</p>
                 </div>
             </div>
-            <button onclick="downloadCSV()" class="px-4 py-2 bg-emerald-700 text-white font-bold rounded text-xs uppercase">
-                📥 Выгрузить результаты в Excel (CSV)
+            <!-- ИСПРАВЛЕНО: вызов функции exportResultsCSV() -->
+            <button onclick="exportResultsCSV()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs uppercase tracking-wider transition flex items-center gap-1.5">
+                📊 Выгрузить результаты в Excel (CSV)
             </button>
         </header>
 
         <!-- Вкладки -->
         <div class="flex space-x-2 border-b pb-2">
-            <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase">Результаты сотрудников</button>
-            <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase">Вопросы в базе</button>
-            <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase">+ Добавить вопрос</button>
+            <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider">Результаты сотрудников</button>
+            <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider">Вопросы в базе</button>
+            <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider">+ Добавить вопрос</button>
         </div>
 
         <!-- Таблица результатов -->
-        <div id="tab-results" class="bg-white border rounded-md p-4">
+        <div id="tab-results" class="bg-white border rounded-md p-4 shadow-sm">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-slate-100 font-bold uppercase border-b">
-                        <th class="p-2.5 border-r">Дата</th>
-                        <th class="p-2.5 border-r">ФИО</th>
-                        <th class="p-2.5 border-r">Должность</th>
-                        <th class="p-2.5 border-r">Результат</th>
-                        <th class="p-2.5 border-r">Документы</th>
-                        <th class="p-2.5 text-center border-r">Допуск</th>
+                    <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                        <th class="p-2.5 border-r border-slate-200">Дата</th>
+                        <th class="p-2.5 border-r border-slate-200">ФИО</th>
+                        <th class="p-2.5 border-r border-slate-200">Должность</th>
+                        <th class="p-2.5 border-r border-slate-200">Результат</th>
+                        <th class="p-2.5 border-r border-slate-200">Документы</th>
+                        <th class="p-2.5 text-center border-r border-slate-200">Допуск</th>
                         <th class="p-2.5 text-center">Действия</th>
                     </tr>
                 </thead>
-                <tbody id="results-table-body" class="divide-y"></tbody>
+                <tbody id="results-table-body" class="divide-y divide-slate-200"></tbody>
             </table>
         </div>
 
         <!-- Таблица вопросов -->
-        <div id="tab-questions-list" class="hidden bg-white border rounded-md p-4">
+        <div id="tab-questions-list" class="hidden bg-white border rounded-md p-4 shadow-sm">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-slate-100 font-bold uppercase border-b">
-                        <th class="p-2.5 w-12 border-r">ID</th>
-                        <th class="p-2.5 w-36 border-r">Специальность</th>
-                        <th class="p-2.5 border-r">Вопрос (RU / KK)</th>
-                        <th class="p-2.5 border-r">Варианты ответов</th>
-                        <th class="p-2.5 text-center border-r">Правильный</th>
+                    <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                        <th class="p-2.5 w-12 border-r border-slate-200">ID</th>
+                        <th class="p-2.5 w-36 border-r border-slate-200">Специальность</th>
+                        <th class="p-2.5 border-r border-slate-200">Вопрос (RU / KK)</th>
+                        <th class="p-2.5 border-r border-slate-200">Варианты ответов</th>
+                        <th class="p-2.5 text-center border-r border-slate-200">Правильный</th>
                         <th class="p-2.5 text-center">Удаление</th>
                     </tr>
                 </thead>
-                <tbody id="questions-table-body" class="divide-y"></tbody>
+                <tbody id="questions-table-body" class="divide-y divide-slate-200"></tbody>
             </table>
         </div>
 
         <!-- Форма добавления вопроса -->
-        <div id="tab-add-question" class="hidden bg-white border rounded-md p-6">
+        <div id="tab-add-question" class="hidden bg-white border rounded-md p-6 shadow-sm">
             <form id="add-question-form" onsubmit="submitQuestion(event)" class="max-w-2xl space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase mb-1">Специальность (Категория):</label>
@@ -153,7 +154,7 @@
                     <label class="block text-xs font-bold uppercase mb-1">Индекс правильного ответа (с 0):</label>
                     <input type="number" id="q_correct_idx" min="0" value="0" required class="w-full px-3 py-2 kpp-input">
                 </div>
-                <button type="submit" class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-xs uppercase">Сохранить вопрос</button>
+                <button type="submit" class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-xs uppercase tracking-wider transition">Сохранить вопрос</button>
             </form>
         </div>
     </div>
@@ -174,10 +175,9 @@
             <!-- ЛИЦЕВАЯ СТОРОНА -->
             <div class="border-2 border-slate-900 rounded overflow-hidden bg-white text-xs">
                 
-                <!-- Шапка пропуска (Логотип увеличен) -->
+                <!-- Шапка пропуска -->
                 <div class="bg-[#002B49] text-white p-3 flex justify-between items-center border-b-4 border-[#C8102E]">
                     <div class="flex items-center space-x-3">
-                        <!-- Увеличенный логотип -->
                         <div class="w-14 h-14 bg-white p-1 rounded-md flex items-center justify-center shrink-0 shadow-sm">
                             <img src="images/logo.png" alt="Logo" class="max-h-full max-w-full object-contain">
                         </div>
@@ -198,7 +198,7 @@
                     </div>
                 </div>
 
-                <!-- Основная сетка данных (Шрифты увеличены) -->
+                <!-- Основная сетка данных -->
                 <div class="p-4 grid grid-cols-12 gap-4 bg-white">
                     <div class="col-span-3 border border-slate-300 rounded overflow-hidden bg-slate-100 aspect-[3/4] flex items-center justify-center">
                         <img id="badge-photo" src="" alt="Фото" class="w-full h-full object-cover">
@@ -215,7 +215,7 @@
                         <div class="grid grid-cols-12"><span class="col-span-5 text-slate-500 font-bold">Транспортное средство:</span><span id="badge-vehicle" class="col-span-7 font-bold text-xs"></span></div>
                     </div>
 
-                    <div class="col-span-4 space-y-2.5 border-l pl-4">
+                    <div class="col-span-4 space-y-2.5 border-l border-slate-200 pl-4">
                         <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
                             <span class="text-[10px] text-slate-500 font-bold uppercase block">СРОК ДЕЙСТВИЯ</span>
                             <span id="badge-dates" class="font-bold text-slate-900 text-sm block mt-0.5"></span>
@@ -228,7 +228,7 @@
                         </div>
 
                         <div class="grid grid-cols-2 gap-2 items-center">
-                            <div class="w-14 h-14 border p-0.5 rounded"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=KAZPHOSPHATE-PERMIT" class="w-full h-full"></div>
+                            <div class="w-14 h-14 border border-slate-200 p-0.5 rounded"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=KAZPHOSPHATE-PERMIT" class="w-full h-full"></div>
                             <div class="text-[10px]">
                                 <span class="text-slate-500 font-bold block">ДОПУСК ВЫДАН</span>
                                 <span id="badge-issued-datetime" class="font-bold text-xs block"></span>
@@ -242,7 +242,7 @@
                     </div>
                 </div>
 
-                <!-- Нижняя плашка (Без KP-) -->
+                <!-- Нижняя плашка -->
                 <div class="bg-[#002B49] text-white p-2 px-3 flex justify-between items-center text-xs">
                     <span class="font-black text-xs text-[#C8102E] bg-white px-2 py-0.5 rounded">⛰ КАРЬЕР</span>
                     <span class="font-semibold">🛡 Используй СИЗ</span>
@@ -253,17 +253,17 @@
                 </div>
             </div>
 
-            <!-- ОБРАТНАЯ СТОРОНА (Увеличен шрифт) -->
+            <!-- ОБРАТНАЯ СТОРОНА -->
             <div class="border border-slate-300 rounded p-4 bg-white text-xs space-y-3">
                 <div class="grid grid-cols-12 gap-4">
-                    <div class="col-span-4 space-y-1.5 border-r pr-3">
+                    <div class="col-span-4 space-y-1.5 border-r border-slate-200 pr-3">
                         <span class="font-bold uppercase text-slate-700 block border-b pb-1 text-xs">КАТЕГОРИИ ДОПУСКА</span>
                         <div class="flex space-x-2 items-center"><span class="bg-emerald-600 text-white font-bold px-2 py-0.5 rounded text-xs">A</span><div><b class="text-xs">ПОСТОЯННЫЙ</b><br><span class="text-[9px] text-slate-500">Работникам ТОО «КАЗФОСФАТ». До 1 года.</span></div></div>
                         <div class="flex space-x-2 items-center"><span class="bg-amber-500 text-white font-bold px-2 py-0.5 rounded text-xs">B</span><div><b class="text-xs">ВРЕМЕННЫЙ</b><br><span class="text-[9px] text-slate-500">Подрядным организациям. До 90 дней.</span></div></div>
                         <div class="flex space-x-2 items-center"><span class="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-xs">C</span><div><b class="text-xs">РАЗОВЫЙ</b><br><span class="text-[9px] text-slate-500">Посетителям. До 24 часов.</span></div></div>
                     </div>
 
-                    <div class="col-span-4 space-y-1.5 border-r pr-3">
+                    <div class="col-span-4 space-y-1.5 border-r border-slate-200 pr-3">
                         <span class="font-bold uppercase text-slate-700 block border-b pb-1 text-xs">РАЗРЕШЕННЫЕ ЗОНЫ ДОСТУПА</span>
                         <div class="grid grid-cols-2 gap-1.5 text-xs">
                             <div>✅ Карьер</div><div>☐ Склад ВМ</div>
@@ -323,7 +323,7 @@
                 <div><label class="block text-xs font-semibold mb-1">Разрешенная зона доступа:</label><input type="text" id="editAccessZone" value="Карьер, ДСК, Отвалы, Бункер, Производственная площадка" class="w-full p-2 border rounded kpp-input"></div>
                 <div><label class="block text-xs font-semibold mb-1">Транспортное средство:</label><input type="text" id="editVehicle" value="—" class="w-full p-2 border rounded kpp-input"></div>
 
-                <div class="bg-slate-50 p-3 rounded border space-y-2">
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 space-y-2">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold mb-1">Категория допуска:</label>
@@ -343,7 +343,7 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closePassModal()" class="px-4 py-2 border bg-white rounded font-medium text-xs">Отмена</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded font-bold text-xs">Сохранить и Открыть допуск</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs transition">Сохранить и Открыть допуск</button>
                 </div>
             </form>
         </div>
