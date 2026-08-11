@@ -31,8 +31,7 @@
 
     <style>
         body { font-family: 'Open Sans', sans-serif; background-color: #F4F6F9; }
-        .kpp-input { background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; color: #0F1E36; font-size: 13px; }
-        .kpp-input:focus { border-color: #002B49; outline: none; box-shadow: 0 0 0 2px rgba(0,43,73,0.1); }
+        .kpp-input { background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 4px; color: #0F1E36; font-size: 13px; }
         
         @media print {
             * {
@@ -40,6 +39,7 @@
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
+
             body * { visibility: hidden; }
             #badge-modal-content, #badge-modal-content * { visibility: visible; }
             #badge-modal-content { 
@@ -59,149 +59,179 @@
 <body class="min-h-full text-slate-800 text-xs antialiased p-4 sm:p-6">
 
     <!-- Экран авторизации -->
-    <div id="admin-login-screen" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-6 border border-slate-100">
-            <div class="text-center space-y-2">
-                <div class="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mx-auto text-xl font-black">🔐</div>
-                <h1 class="text-xl font-extrabold text-slate-900 uppercase tracking-wide">Панель управления</h1>
-                <p class="text-xs text-slate-500">Авторизация руководителя ТОО «Казфосфат»</p>
-            </div>
+    <div id="admin-login-screen" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-4">
+            <h1 class="text-2xl font-bold text-slate-900">Вход в админку</h1>
             <form id="login-form" class="space-y-4" onsubmit="loginAdmin(event)">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Логин</label>
-                    <input id="admin-login" type="text" value="admin" required class="w-full px-3 py-2.5 kpp-input" placeholder="Введите логин">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Пароль</label>
-                    <input id="admin-password" type="password" value="kazphosphate" required class="w-full px-3 py-2.5 kpp-input" placeholder="Введите пароль">
-                </div>
-                <button type="submit" class="w-full py-3 bg-[#002B49] hover:bg-slate-800 text-white font-extrabold rounded-lg uppercase text-xs tracking-wider transition shadow-md">Войти в систему</button>
-                <p id="login-error" class="hidden text-xs text-center text-red-600 font-bold bg-red-50 p-2.5 rounded-lg border border-red-200"></p>
+                <input id="admin-login" type="text" value="admin" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Логин">
+                <input id="admin-password" type="password" value="kazphosphate" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Пароль">
+                <button type="submit" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded uppercase text-xs hover:bg-slate-800 transition">Войти</button>
+                <p id="login-error" class="hidden text-sm text-red-600 font-semibold"></p>
             </form>
         </div>
     </div>
 
     <!-- Основное приложение админки -->
     <div id="admin-app" class="max-w-[1140px] mx-auto space-y-4 hidden">
-        <header class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+        <header class="bg-white border rounded-md p-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
             <div class="flex items-center space-x-3">
-                <img src="images/logo.png" alt="Казфосфат" class="h-10 object-contain" onerror="this.src='https://via.placeholder.com/40'">
+                <img src="images/logo.png" alt="Казфосфат" class="w-10 h-10 object-contain" onerror="this.src='https://via.placeholder.com/40'">
                 <div>
-                    <h1 class="font-extrabold text-sm text-slate-900 uppercase">Панель руководителя — ТОО «Казфосфат»</h1>
-                    <p class="text-[11px] text-slate-500 font-medium">Реестр результатов тестирования, проверка документов и генерация допусков</p>
+                    <h1 class="font-bold text-sm text-slate-900 uppercase">Панель руководителя — ТОО «Казфосфат»</h1>
+                    <p class="text-[11px] text-slate-500">Управление базой знаний, реестр тестирования и генерация допусков</p>
                 </div>
             </div>
-            <button onclick="exportResultsCSV()" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-lg text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-sm">
-                <span>📊</span> Экспорт результатов в Excel (CSV)
+            <button onclick="exportResultsCSV()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs uppercase tracking-wider transition flex items-center gap-1.5">
+                📊 Выгрузить результаты в Excel (CSV)
             </button>
         </header>
 
         <!-- Вкладки -->
-        <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
-            <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2.5 font-extrabold rounded-lg bg-[#002B49] text-white text-xs uppercase tracking-wider transition shadow-sm">Результаты сотрудников</button>
-            <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2.5 font-extrabold rounded-lg text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 text-xs uppercase tracking-wider transition">Вопросы в базе</button>
-            <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2.5 font-extrabold rounded-lg text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 text-xs uppercase tracking-wider transition">+ Добавить вопрос</button>
+        <div class="flex flex-wrap gap-2 border-b pb-2">
+            <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition">Результаты сотрудников</button>
+            <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">Вопросы в базе</button>
+            <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">+ Добавить вопрос</button>
+            <button onclick="switchTab('specialties')" id="tab-specialties-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">🛠 Специальности</button>
         </div>
 
         <!-- ТАБЛИЦА РЕЗУЛЬТАТОВ -->
-        <div id="tab-results" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm overflow-hidden">
+        <div id="tab-results" class="bg-white border rounded-md p-4 shadow-sm space-y-3">
+            <div class="flex flex-col md:flex-row justify-between gap-3 items-center bg-slate-50 p-2.5 rounded border border-slate-200">
+                <input type="text" id="search-results" oninput="renderResultsTable()" placeholder="🔍 Поиск по ФИО или ИИН..." class="px-3 py-1.5 kpp-input w-full md:w-64">
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <select id="filter-spec" onchange="renderResultsTable()" class="px-3 py-1.5 kpp-input flex-grow md:flex-grow-0">
+                        <option value="">Все специальности</option>
+                    </select>
+                    <select id="filter-status" onchange="renderResultsTable()" class="px-3 py-1.5 kpp-input">
+                        <option value="">Все статусы</option>
+                        <option value="pass">Сдали</option>
+                        <option value="fail">Не сдали</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-slate-100 font-extrabold uppercase border-b border-slate-200 text-slate-700">
-                            <th class="p-3">Дата / Время</th>
-                            <th class="p-3">ФИО сотрудника</th>
-                            <th class="p-3">Должность</th>
-                            <th class="p-3">Баллы</th>
-                            <th class="p-3">Документы</th>
-                            <th class="p-3 text-center">Пропуск</th>
-                            <th class="p-3 text-center">Действия</th>
+                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                            <th class="p-2.5 border-r border-slate-200">Дата</th>
+                            <th class="p-2.5 border-r border-slate-200">ФИО / ИИН</th>
+                            <th class="p-2.5 border-r border-slate-200">Должность</th>
+                            <th class="p-2.5 border-r border-slate-200">Результат</th>
+                            <th class="p-2.5 text-center border-r border-slate-200">Допуск</th>
+                            <th class="p-2.5 text-center">Действия</th>
                         </tr>
                     </thead>
-                    <tbody id="results-table-body" class="divide-y divide-slate-100 font-medium"></tbody>
+                    <tbody id="results-table-body" class="divide-y divide-slate-200"></tbody>
                 </table>
             </div>
         </div>
 
         <!-- ТАБЛИЦА ВОПРОСОВ -->
-        <div id="tab-questions-list" class="hidden bg-white border border-slate-200 rounded-xl p-4 shadow-sm overflow-hidden">
+        <div id="tab-questions-list" class="hidden bg-white border rounded-md p-4 shadow-sm space-y-3">
+            <div class="flex flex-col md:flex-row justify-between gap-3 items-center bg-slate-50 p-2.5 rounded border border-slate-200">
+                <input type="text" id="search-questions" oninput="renderQuestionsTable()" placeholder="🔍 Поиск по тексту вопроса..." class="px-3 py-1.5 kpp-input w-full md:w-64">
+                <select id="filter-q-category" onchange="renderQuestionsTable()" class="px-3 py-1.5 kpp-input w-full md:w-auto">
+                    <option value="">Все категории</option>
+                </select>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-slate-100 font-extrabold uppercase border-b border-slate-200 text-slate-700">
-                            <th class="p-3 w-12">ID</th>
-                            <th class="p-3 w-40">Специальность</th>
-                            <th class="p-3">Вопрос (RU / KK)</th>
-                            <th class="p-3">Варианты ответов</th>
-                            <th class="p-3 text-center">Правильный</th>
-                            <th class="p-3 text-center">Удаление</th>
+                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                            <th class="p-2.5 w-12 border-r border-slate-200">ID</th>
+                            <th class="p-2.5 w-40 border-r border-slate-200">Специальность</th>
+                            <th class="p-2.5 border-r border-slate-200">Вопрос (RU / KK)</th>
+                            <th class="p-2.5 border-r border-slate-200">Варианты ответов</th>
+                            <th class="p-2.5 text-center border-r border-slate-200">Правильный</th>
+                            <th class="p-2.5 text-center">Действия</th>
                         </tr>
                     </thead>
-                    <tbody id="questions-table-body" class="divide-y divide-slate-100 font-medium"></tbody>
+                    <tbody id="questions-table-body" class="divide-y divide-slate-200"></tbody>
                 </table>
             </div>
         </div>
 
         <!-- ФОРМА ДОБАВЛЕНИЯ ВОПРОСА -->
-        <div id="tab-add-question" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <div id="tab-add-question" class="hidden bg-white border rounded-md p-6 shadow-sm">
             <form id="add-question-form" onsubmit="submitQuestion(event)" class="max-w-2xl space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Специальность (Категория):</label>
-                    <select id="q_category" class="w-full px-3 py-2.5 kpp-input font-bold">
-                        <option value="dumper">Водитель карьерного самосвала</option>
-                        <option value="car_driver">Водитель легкового автомобиля</option>
-                        <option value="truck_driver">Водитель грузового автомобиля</option>
-                        <option value="bus_driver">Водитель автобуса</option>
-                        <option value="trailer_driver">Водитель автомобиля с прицепом</option>
-                        <option value="fuel_driver">Водитель топливозаправщика</option>
-                        <option value="dopog_driver">Водитель (ДОПОГ)</option>
-                        <option value="excavator">Машинист экскаватора</option>
-                        <option value="loader">Машинист фронтального погрузчика</option>
-                        <option value="bulldozer">Машинист бульдозера</option>
-                        <option value="grader">Машинист автогрейдера</option>
-                        <option value="roller">Машинист дорожного катка</option>
-                        <option value="telehandler">Машинист телескопического погрузчика</option>
-                        <option value="drilling_rig">Машинист буровой установки</option>
-                        <option value="operator">Оператор технологического оборудования</option>
-                        <option value="auto_mechanic">Слесарь по ремонту автомобилей</option>
-                        <option value="machinery_mechanic">Слесарь по ремонту самоходной техники</option>
-                        <option value="mechanic">Механик участка</option>
-                        <option value="foreman">Мастер участка</option>
-                        <option value="other">Другая должность</option>
-                    </select>
+                    <label class="block text-xs font-bold uppercase mb-1">Специальность (Категория):</label>
+                    <select id="q_category" class="w-full px-3 py-2 kpp-input" required></select>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Вопрос (RU):</label><textarea id="q_text_ru" required class="w-full p-2.5 kpp-input" rows="3"></textarea></div>
-                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Вопрос (KK):</label><textarea id="q_text_kk" required class="w-full p-2.5 kpp-input" rows="3"></textarea></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold uppercase mb-1">Вопрос (RU):</label><textarea id="q_text_ru" required class="w-full px-3 py-2 kpp-input" rows="3"></textarea></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Вопрос (KK):</label><textarea id="q_text_kk" required class="w-full px-3 py-2 kpp-input" rows="3"></textarea></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Варианты RU (через запятую):</label><input type="text" id="q_options_ru" required class="w-full px-3 py-2.5 kpp-input"></div>
-                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Варианты KK (через запятую):</label><input type="text" id="q_options_kk" required class="w-full px-3 py-2 kpp-input"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты RU (через запятую):</label><input type="text" id="q_options_ru" required class="w-full px-3 py-2 kpp-input" placeholder="Ответ 1, Ответ 2, Ответ 3"></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты KK (через запятую):</label><input type="text" id="q_options_kk" required class="w-full px-3 py-2 kpp-input" placeholder="Ответ 1, Ответ 2, Ответ 3"></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Индекс правильного ответа (с 0):</label>
-                    <input type="number" id="q_correct_idx" min="0" value="0" required class="w-full px-3 py-2.5 kpp-input">
+                    <label class="block text-xs font-bold uppercase mb-1">Индекс правильного ответа (с 0):</label>
+                    <input type="number" id="q_correct_idx" min="0" value="0" required class="w-full px-3 py-2 kpp-input">
                 </div>
-                <button type="submit" class="px-6 py-3 bg-[#C8102E] hover:bg-[#A80C25] text-white font-extrabold rounded-lg text-xs uppercase tracking-wider transition shadow-sm">Сохранить вопрос</button>
+                <button type="submit" class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-xs uppercase tracking-wider transition">Сохранить вопрос</button>
             </form>
+        </div>
+
+        <!-- ВКЛАДКА УПРАВЛЕНИЯ СПЕЦИАЛЬНОСТЯМИ -->
+        <div id="tab-specialties" class="hidden bg-white border rounded-md p-6 shadow-sm space-y-6">
+            <div class="border-b pb-3">
+                <h2 class="text-sm font-bold uppercase text-slate-800">Управление справочником специальностей</h2>
+                <p class="text-slate-500 text-[11px]">Добавляйте новые должности и категории, которые будут доступны при создании вопросов и формировании тестов.</p>
+            </div>
+
+            <form id="specialty-form" onsubmit="saveSpecialty(event)" class="max-w-xl bg-slate-50 p-4 rounded border border-slate-200 space-y-3">
+                <input type="hidden" id="spec-key-edit">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Системный код (ID):</label>
+                        <input type="text" id="spec-key" required class="w-full p-2 border rounded kpp-input font-mono" placeholder="например: crane_operator">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Название специальности:</label>
+                        <input type="text" id="spec-name" required class="w-full p-2 border rounded kpp-input" placeholder="Машинист крана">
+                    </div>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <button type="button" onclick="resetSpecForm()" class="px-4 py-1.5 border bg-white rounded font-medium text-xs">Сбросить</button>
+                    <button type="submit" id="spec-submit-btn" class="px-4 py-1.5 bg-slate-900 text-white font-bold rounded text-xs uppercase">Добавить специальность</button>
+                </div>
+            </form>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                            <th class="p-2.5 w-40 border-r border-slate-200">Код (ID)</th>
+                            <th class="p-2.5 border-r border-slate-200">Наименование специальности</th>
+                            <th class="p-2.5 w-36 text-center">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="specialties-table-body" class="divide-y divide-slate-200"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ПЕЧАТИ ПРОПУСКА -->
     <div id="badge-modal" onclick="if(event.target === this) closeBadgeModal()" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div id="badge-modal-content" class="bg-white text-black rounded-xl max-w-4xl w-full p-6 space-y-4 shadow-2xl relative border-2 border-slate-900 my-4">
+        <div id="badge-modal-content" class="bg-white text-black rounded-lg max-w-4xl w-full p-6 space-y-4 shadow-2xl relative border-2 border-slate-900 my-4">
             
-            <div class="flex justify-between items-center no-print border-b border-slate-200 pb-3">
-                <span class="text-sm font-extrabold uppercase text-slate-800">Просмотр и печать допуска</span>
+            <div class="flex justify-between items-center no-print border-b pb-3">
+                <span class="text-sm font-bold uppercase text-slate-700">Просмотр и печать допуска</span>
                 <div class="flex space-x-2">
-                    <button onclick="window.print()" class="px-4 py-2 bg-blue-700 text-white font-extrabold text-xs rounded-lg hover:bg-blue-800 transition flex items-center gap-1.5 shadow-sm">🖨 Печать / PDF</button>
-                    <button onclick="closeBadgeModal()" class="px-3.5 py-2 bg-slate-200 font-extrabold rounded-lg hover:bg-slate-300 transition text-xs">✕</button>
+                    <button onclick="window.print()" class="px-4 py-1.5 bg-blue-700 text-white font-bold text-xs rounded hover:bg-blue-800 transition flex items-center gap-1">🖨 Печать / PDF</button>
+                    <button onclick="closeBadgeModal()" class="px-3 py-1 bg-slate-200 font-bold rounded hover:bg-slate-300 transition">✕</button>
                 </div>
             </div>
 
             <!-- КАРТОЧКА БЕЙДЖА -->
             <div class="border-4 border-black rounded-xl overflow-hidden bg-white text-black font-sans shadow-lg">
                 
+                <!-- 1. ШАПКА -->
                 <div class="bg-black text-white px-4 py-3 flex justify-between items-center border-b-4 border-[#C8102E]">
                     <div class="flex items-center space-x-3">
                         <div class="w-12 h-12 bg-white rounded p-1 flex items-center justify-center shrink-0">
@@ -215,7 +245,9 @@
 
                     <div class="text-center">
                         <h1 class="font-black text-3xl tracking-widest text-white uppercase leading-none">ДОПУСК</h1>
-                        <p class="text-[9px] text-slate-300 uppercase font-bold tracking-tight mt-1">НА ПРАВО ВЪЕЗДА И ВЫПОЛНЕНИЯ РАБОТ НА ТЕРРИТОРИИ</p>
+                        <p class="text-[9px] text-slate-300 uppercase font-bold tracking-tight mt-1">
+                            НА ПРАВО ВЪЕЗДА И ВЫПОЛНЕНИЯ РАБОТ<br>НА ТЕРРИТОРИИ КАРЬЕРА
+                        </p>
                     </div>
 
                     <div class="w-10 h-10 border-2 border-white rounded-full flex items-center justify-center text-white">
@@ -223,6 +255,7 @@
                     </div>
                 </div>
 
+                <!-- 2. СРЕДНИЙ БЛОК -->
                 <div class="p-4 grid grid-cols-12 gap-4 border-b-2 border-black items-stretch">
                     <div class="col-span-3 border-2 border-black rounded-lg overflow-hidden bg-slate-100 aspect-[3/4] flex flex-col items-center justify-center relative">
                         <img id="badge-photo" src="" alt="ФОТО" class="w-full h-full object-cover">
@@ -265,6 +298,7 @@
                     </div>
                 </div>
 
+                <!-- 3. НИЖНИЙ БЛОК -->
                 <div class="p-3.5 grid grid-cols-12 gap-4 text-xs leading-normal bg-white">
                     <div class="col-span-3 border-r-2 border-slate-300 pr-3 space-y-2">
                         <span class="font-black uppercase text-black block text-center border-b-2 border-slate-900 pb-1 text-[11px]">КАТЕГОРИИ ДОПУСКА</span>
@@ -319,6 +353,7 @@
                     </div>
                 </div>
 
+                <!-- 4. БАННЕР -->
                 <div class="bg-black text-white text-[11px] py-2 text-center font-black uppercase tracking-wider flex justify-center items-center gap-2 border-t-2 border-black">
                     <span class="text-white text-base">🛡</span>
                     <span>БЕЗОПАСНОСТЬ – НАШ ПРИОРИТЕТ! СОБЛЮДАЙ ПРАВИЛА – СОХРАНИ ЖИЗНЬ!</span>
@@ -330,52 +365,51 @@
 
     <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ КАРТЫ ДОПУСКА -->
     <div id="passEditModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white text-slate-900 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative border border-slate-200 my-8">
-            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
-                <h3 class="text-base font-extrabold text-slate-900">🪪 Редактирование карты допуска</h3>
-                <button onclick="closePassModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+        <div class="bg-white text-slate-900 rounded-xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative border border-slate-300 my-8">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800">🪪 Редактирование карты допуска</h3>
+                <button onclick="closePassModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
             </div>
 
             <form id="passEditForm" onsubmit="savePassCard(event)" class="space-y-3">
                 <input type="hidden" id="editPassId">
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ф.И.О.:</label><input type="text" id="editFullName" required class="w-full p-2.5 kpp-input"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">ИИН:</label><input type="text" id="editIin" class="w-full p-2.5 kpp-input"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Ф.И.О.:</label><input type="text" id="editFullName" required class="w-full p-2 border rounded kpp-input"></div>
+                    <div><label class="block text-xs font-semibold mb-1">ИИН:</label><input type="text" id="editIin" class="w-full p-2 border rounded kpp-input"></div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Должность:</label><input type="text" id="editPosition" required class="w-full p-2.5 kpp-input"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Организация:</label><input type="text" id="editOrganization" value="ТОО «КАЗФОСФАТ»" class="w-full p-2.5 kpp-input"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Должность:</label><input type="text" id="editPosition" required class="w-full p-2 border rounded kpp-input"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Организация:</label><input type="text" id="editOrganization" value="ТОО «КАЗФОСФАТ»" class="w-full p-2 border rounded kpp-input"></div>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 space-y-2">
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Категория допуска:</label>
-                            <select id="editCategory" onchange="calculateExpiryPreview()" class="w-full p-2.5 kpp-input font-bold bg-white">
+                            <label class="block text-xs font-bold mb-1">Категория допуска:</label>
+                            <select id="editCategory" onchange="calculateExpiryPreview()" class="w-full p-2 border rounded font-bold bg-white">
                                 <option value="A">Категория A (Постоянный — 1 год)</option>
                                 <option value="B">Категория B (Временный — 6 месяцев)</option>
                                 <option value="C">Категория C (Разовый — 24 часа)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Дата выдачи:</label>
-                            <input type="date" id="editIssueDate" onchange="calculateExpiryPreview()" class="w-full p-2.5 kpp-input bg-white font-bold">
+                            <label class="block text-xs font-bold mb-1">Дата выдачи:</label>
+                            <input type="date" id="editIssueDate" onchange="calculateExpiryPreview()" class="w-full p-2 border rounded bg-white">
                         </div>
                     </div>
-                    <div class="text-xs font-medium pt-1">Срок действия до: <strong id="expiryPreviewText" class="text-emerald-700 font-extrabold">--.--.----</strong></div>
+                    <div class="text-xs">Срок действия до: <strong id="expiryPreviewText" class="text-emerald-600">--.--.----</strong></div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-                    <button type="button" onclick="closePassModal()" class="px-4 py-2.5 border border-slate-300 bg-white hover:bg-slate-50 rounded-lg font-bold text-xs text-slate-700 transition">Отмена</button>
-                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-extrabold text-xs uppercase tracking-wider transition shadow-sm">Сохранить и Открыть допуск</button>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePassModal()" class="px-4 py-2 border bg-white rounded font-medium text-xs">Отмена</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs transition">Сохранить и Открыть допуск</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Подключаем внешний скрипт админки -->
     <script src="js/admin.js"></script>
 </body>
 </html>
