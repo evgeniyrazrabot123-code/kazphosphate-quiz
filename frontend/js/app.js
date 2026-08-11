@@ -31,7 +31,6 @@ const translations = {
         subHeader: 'Система аттестации персонала и оценки производственных допусков',
         sec1Title: 'Раздел 1. Данные сотрудника',
         lblFio: '1. Фамилия, имя, отчество (полностью)',
-        lblIin: '2. ИИН сотрудника (при наличии)',
         lblPhone: '2. Контактный телефон',
         lblBirth: '3. Дата рождения',
         lblCitizenship: '4. Гражданство',
@@ -49,7 +48,6 @@ const translations = {
         subHeader: 'Персоналды тестирования және өндірістік рұқсаттарды бағалау жүйесі',
         sec1Title: '1-Бөлім. Қызметкердің мәліметтері',
         lblFio: '1. Тегі, аты, әкесінің аты (толық)',
-        lblIin: '2. Қызметкердің ЖСН (бар болса)',
         lblPhone: '2. Байланыс телефоны',
         lblBirth: '3. Туған күні',
         lblCitizenship: '4. Азаматтығы',
@@ -86,7 +84,6 @@ function setLanguage(lang) {
     if (document.getElementById('sub-header')) document.getElementById('sub-header').innerText = t.subHeader;
     if (document.getElementById('sec1-title')) document.getElementById('sec1-title').innerText = t.sec1Title;
     if (document.getElementById('lbl-fio')) document.getElementById('lbl-fio').innerText = t.lblFio;
-    if (document.getElementById('lbl-iin')) document.getElementById('lbl-iin').innerText = t.lblIin;
     if (document.getElementById('lbl-phone')) document.getElementById('lbl-phone').innerText = t.lblPhone;
     if (document.getElementById('lbl-birth')) document.getElementById('lbl-birth').innerText = t.lblBirth;
     if (document.getElementById('lbl-citizenship')) document.getElementById('lbl-citizenship').innerText = t.lblCitizenship;
@@ -115,7 +112,7 @@ function setLanguage(lang) {
     }
 }
 
-// 2. ВАЛИДАЦИЯ (БЕЗ ОБЯЗАТЕЛЬНОЙ ПРОВЕРКИ ИИН)
+// 2. ВАЛИДАЦИЯ (БЕЗ ИИН)
 async function goToStep2() {
     const fullName = document.getElementById('full_name')?.value.trim();
     const phone = document.getElementById('phone')?.value.trim();
@@ -193,6 +190,9 @@ async function loadQuestions() {
             qBox.className = "question-card p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3";
             qBox.setAttribute('data-id', q.id);
 
+            // 🧹 Убираем префикс вида "[17/20] " или "[1/20] " из текста вопроса
+            const cleanText = q.text.replace(/^\[\d+\/\d+\]\s*/, '');
+
             // 🔀 2. ПРИВЯЗЫВАЕМ НАСТОЯЩИЙ ИНДЕКС К КАЖДОМУ ВАРИАНТУ И ПЕРЕМЕШИВАЕМ ВАРИАНТЫ
             let indexedOptions = q.options.map((optText, origIndex) => ({
                 text: optText,
@@ -218,7 +218,7 @@ async function loadQuestions() {
             });
 
             qBox.innerHTML = `
-                <p class="font-bold text-slate-900 text-xs sm:text-sm"><span class="text-kpp-red mr-1.5">${idx + 1}.</span>${q.text}</p>
+                <p class="font-bold text-slate-900 text-xs sm:text-sm"><span class="text-kpp-red mr-1.5">${idx + 1}.</span>${cleanText}</p>
                 <div class="space-y-2">${optionsHtml}</div>
             `;
             container.appendChild(qBox);
@@ -284,7 +284,7 @@ async function handleFormSubmit(e) {
         formData.append('full_name', document.getElementById('full_name')?.value.trim() || '');
         formData.append('birth_date', document.getElementById('birth_date')?.value || '');
         formData.append('position', document.getElementById('position')?.value || '');
-        formData.append('iin', document.getElementById('iin')?.value.trim() || '');
+        formData.append('iin', document.getElementById('iin')?.value?.trim() || '');
         formData.append('phone', document.getElementById('phone')?.value.trim() || '');
         formData.append('citizenship', document.getElementById('citizenship')?.value.trim() || '');
 
@@ -323,7 +323,8 @@ async function handleFormSubmit(e) {
 
                 if (result.details && result.details.length > 0) {
                     result.details.forEach((item, index) => {
-                        const qText = currentLang === 'ru' ? item.text_ru : item.text_kk;
+                        const qRawText = currentLang === 'ru' ? item.text_ru : item.text_kk;
+                        const qText = qRawText.replace(/^\[\d+\/\d+\]\s*/, '');
                         const options = currentLang === 'ru' ? item.options_ru : item.options_kk;
                         
                         const userAnsText = options[item.user_answer] !== undefined ? options[item.user_answer] : '—';
