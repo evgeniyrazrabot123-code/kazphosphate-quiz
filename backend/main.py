@@ -154,6 +154,12 @@ async def serve_admin():
         raise HTTPException(status_code=404, detail="Файл admin.html не найден")
     return FileResponse(admin_file)
 
+@app.get("/vid.mp4")
+async def serve_video():
+    video_path = FRONTEND_DIR / "vid.mp4"
+    if not video_path.exists():
+        raise HTTPException(status_code=404, detail="Видеофайл не найден")
+    return FileResponse(video_path, media_type="video/mp4")
 # =====================================================================
 # API: ПОЛЬЗОВАТЕЛЬСКАЯ ЧАСТЬ
 # =====================================================================
