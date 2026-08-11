@@ -33,28 +33,28 @@
         body { font-family: 'Open Sans', sans-serif; background-color: #F4F6F9; }
         .kpp-input { background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 4px; color: #0F1E36; font-size: 13px; }
         
+        /* ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ ЦВЕТОВ И ЦВЕТНЫХ ФОНОВ ПРИ ПЕЧАТИ */
         @media print {
-    /* Принудительно включаем фоновые цвета и изображения при печати */
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-    }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
 
-    body * { visibility: hidden; }
-    #badge-modal-content, #badge-modal-content * { visibility: visible; }
-    #badge-modal-content { 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 100%; 
-        margin: 0; 
-        padding: 0; 
-        border: none !important;
-        box-shadow: none !important;
-    }
-    .no-print { display: none !important; }
-}
+            body * { visibility: hidden; }
+            #badge-modal-content, #badge-modal-content * { visibility: visible; }
+            #badge-modal-content { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                margin: 0; 
+                padding: 0; 
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="min-h-full text-slate-800 text-xs antialiased p-4 sm:p-6">
@@ -92,66 +92,41 @@
             <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition">Результаты сотрудников</button>
             <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">Вопросы в базе</button>
             <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">+ Добавить вопрос</button>
-            <button onclick="switchTab('specialties')" id="tab-specialties-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">🛠 Специальности</button>
         </div>
 
         <!-- ТАБЛИЦА РЕЗУЛЬТАТОВ -->
-        <div id="tab-results" class="bg-white border rounded-md p-4 shadow-sm space-y-3">
-            <div class="flex flex-col md:flex-row justify-between gap-3 items-center bg-slate-50 p-2.5 rounded border border-slate-200">
-                <input type="text" id="search-results" oninput="renderResultsTable()" placeholder="🔍 Поиск по ФИО или ИИН..." class="px-3 py-1.5 kpp-input w-full md:w-64">
-                <div class="flex items-center gap-2 w-full md:w-auto">
-                    <select id="filter-spec" onchange="renderResultsTable()" class="px-3 py-1.5 kpp-input flex-grow md:flex-grow-0">
-                        <option value="">Все специальности</option>
-                    </select>
-                    <select id="filter-status" onchange="renderResultsTable()" class="px-3 py-1.5 kpp-input">
-                        <option value="">Все статусы</option>
-                        <option value="pass">Сдали</option>
-                        <option value="fail">Не сдали</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
-                            <th class="p-2.5 border-r border-slate-200">Дата</th>
-                            <th class="p-2.5 border-r border-slate-200">ФИО / ИИН</th>
-                            <th class="p-2.5 border-r border-slate-200">Должность</th>
-                            <th class="p-2.5 border-r border-slate-200">Результат</th>
-                            <th class="p-2.5 text-center border-r border-slate-200">Допуск</th>
-                            <th class="p-2.5 text-center">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-table-body" class="divide-y divide-slate-200"></tbody>
-                </table>
-            </div>
+        <div id="tab-results" class="bg-white border rounded-md p-4 shadow-sm">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                        <th class="p-2.5 border-r border-slate-200">Дата</th>
+                        <th class="p-2.5 border-r border-slate-200">ФИО</th>
+                        <th class="p-2.5 border-r border-slate-200">Должность</th>
+                        <th class="p-2.5 border-r border-slate-200">Результат</th>
+                        <th class="p-2.5 border-r border-slate-200">Документы</th>
+                        <th class="p-2.5 text-center border-r border-slate-200">Допуск</th>
+                        <th class="p-2.5 text-center">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table-body" class="divide-y divide-slate-200"></tbody>
+            </table>
         </div>
 
         <!-- ТАБЛИЦА ВОПРОСОВ -->
-        <div id="tab-questions-list" class="hidden bg-white border rounded-md p-4 shadow-sm space-y-3">
-            <div class="flex flex-col md:flex-row justify-between gap-3 items-center bg-slate-50 p-2.5 rounded border border-slate-200">
-                <input type="text" id="search-questions" oninput="renderQuestionsTable()" placeholder="🔍 Поиск по тексту вопроса..." class="px-3 py-1.5 kpp-input w-full md:w-64">
-                <select id="filter-q-category" onchange="renderQuestionsTable()" class="px-3 py-1.5 kpp-input w-full md:w-auto">
-                    <option value="">Все категории</option>
-                </select>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
-                            <th class="p-2.5 w-12 border-r border-slate-200">ID</th>
-                            <th class="p-2.5 w-40 border-r border-slate-200">Специальность</th>
-                            <th class="p-2.5 border-r border-slate-200">Вопрос (RU / KK)</th>
-                            <th class="p-2.5 border-r border-slate-200">Варианты ответов</th>
-                            <th class="p-2.5 text-center border-r border-slate-200">Правильный</th>
-                            <th class="p-2.5 text-center">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="questions-table-body" class="divide-y divide-slate-200"></tbody>
-                </table>
-            </div>
+        <div id="tab-questions-list" class="hidden bg-white border rounded-md p-4 shadow-sm">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
+                        <th class="p-2.5 w-12 border-r border-slate-200">ID</th>
+                        <th class="p-2.5 w-36 border-r border-slate-200">Специальность</th>
+                        <th class="p-2.5 border-r border-slate-200">Вопрос (RU / KK)</th>
+                        <th class="p-2.5 border-r border-slate-200">Варианты ответов</th>
+                        <th class="p-2.5 text-center border-r border-slate-200">Правильный</th>
+                        <th class="p-2.5 text-center">Удаление</th>
+                    </tr>
+                </thead>
+                <tbody id="questions-table-body" class="divide-y divide-slate-200"></tbody>
+            </table>
         </div>
 
         <!-- ФОРМА ДОБАВЛЕНИЯ ВОПРОСА -->
@@ -159,15 +134,36 @@
             <form id="add-question-form" onsubmit="submitQuestion(event)" class="max-w-2xl space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase mb-1">Специальность (Категория):</label>
-                    <select id="q_category" class="w-full px-3 py-2 kpp-input" required></select>
+                    <select id="q_category" class="w-full px-3 py-2 kpp-input">
+                        <option value="dumper">Водитель карьерного самосвала</option>
+                        <option value="car_driver">Водитель легкового автомобиля</option>
+                        <option value="truck_driver">Водитель грузового автомобиля</option>
+                        <option value="bus_driver">Водитель автобуса</option>
+                        <option value="trailer_driver">Водитель автомобиля с прицепом</option>
+                        <option value="fuel_driver">Водитель топливозаправщика</option>
+                        <option value="dopog_driver">Водитель (ДОПОГ)</option>
+                        <option value="excavator">Машинист экскаватора</option>
+                        <option value="loader">Машинист фронтального погрузчика</option>
+                        <option value="bulldozer">Машинист бульдозера</option>
+                        <option value="grader">Машинист автогрейдера</option>
+                        <option value="roller">Машинист дорожного катка</option>
+                        <option value="telehandler">Машинист телескопического погрузчика</option>
+                        <option value="drilling_rig">Машинист буровой установки</option>
+                        <option value="operator">Оператор технологического оборудования</option>
+                        <option value="auto_mechanic">Слесарь по ремонту автомобилей</option>
+                        <option value="machinery_mechanic">Слесарь по ремонту самоходной техники</option>
+                        <option value="mechanic">Механик участка</option>
+                        <option value="foreman">Мастер участка</option>
+                        <option value="other">Другая должность</option>
+                    </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-xs font-bold uppercase mb-1">Вопрос (RU):</label><textarea id="q_text_ru" required class="w-full px-3 py-2 kpp-input" rows="3"></textarea></div>
                     <div><label class="block text-xs font-bold uppercase mb-1">Вопрос (KK):</label><textarea id="q_text_kk" required class="w-full px-3 py-2 kpp-input" rows="3"></textarea></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты RU (через запятую):</label><input type="text" id="q_options_ru" required class="w-full px-3 py-2 kpp-input" placeholder="Ответ 1, Ответ 2, Ответ 3"></div>
-                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты KK (через запятую):</label><input type="text" id="q_options_kk" required class="w-full px-3 py-2 kpp-input" placeholder="Ответ 1, Ответ 2, Ответ 3"></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты RU (через запятую):</label><input type="text" id="q_options_ru" required class="w-full px-3 py-2 kpp-input"></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Варианты KK (через запятую):</label><input type="text" id="q_options_kk" required class="w-full px-3 py-2 kpp-input"></div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase mb-1">Индекс правильного ответа (с 0):</label>
@@ -176,52 +172,12 @@
                 <button type="submit" class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-xs uppercase tracking-wider transition">Сохранить вопрос</button>
             </form>
         </div>
-
-        <!-- ВКЛАДКА УПРАВЛЕНИЯ СПЕЦИАЛЬНОСТЯМИ -->
-        <div id="tab-specialties" class="hidden bg-white border rounded-md p-6 shadow-sm space-y-6">
-            <div class="border-b pb-3">
-                <h2 class="text-sm font-bold uppercase text-slate-800">Управление справочником специальностей</h2>
-                <p class="text-slate-500 text-[11px]">Добавляйте новые должности и категории, которые будут доступны при создании вопросов и формировании тестов.</p>
-            </div>
-
-            <form id="specialty-form" onsubmit="saveSpecialty(event)" class="max-w-xl bg-slate-50 p-4 rounded border border-slate-200 space-y-3">
-                <input type="hidden" id="spec-key-edit">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Системный код (ID):</label>
-                        <input type="text" id="spec-key" required class="w-full p-2 border rounded kpp-input font-mono" placeholder="например: crane_operator">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Название специальности:</label>
-                        <input type="text" id="spec-name" required class="w-full p-2 border rounded kpp-input" placeholder="Машинист крана">
-                    </div>
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button type="button" onclick="resetSpecForm()" class="px-4 py-1.5 border bg-white rounded font-medium text-xs">Сбросить</button>
-                    <button type="submit" id="spec-submit-btn" class="px-4 py-1.5 bg-slate-900 text-white font-bold rounded text-xs uppercase">Добавить специальность</button>
-                </div>
-            </form>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
-                            <th class="p-2.5 w-40 border-r border-slate-200">Код (ID)</th>
-                            <th class="p-2.5 border-r border-slate-200">Наименование специальности</th>
-                            <th class="p-2.5 w-36 text-center">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="specialties-table-body" class="divide-y divide-slate-200"></tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПЕЧАТИ ПРОПУСКА С УВЕЛИЧЕННЫМИ ШРИФТАМИ -->
+    <!-- МОДАЛЬНОЕ ОКНО ПЕЧАТИ ПРОПУСКА -->
     <div id="badge-modal" onclick="if(event.target === this) closeBadgeModal()" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div id="badge-modal-content" class="bg-white text-black rounded-lg max-w-4xl w-full p-6 space-y-4 shadow-2xl relative border-2 border-slate-900 my-4">
             
-            <!-- Панель управления -->
             <div class="flex justify-between items-center no-print border-b pb-3">
                 <span class="text-sm font-bold uppercase text-slate-700">Просмотр и печать допуска</span>
                 <div class="flex space-x-2">
@@ -230,7 +186,7 @@
                 </div>
             </div>
 
-            <!-- ГЛАВНАЯ КАРТОЧКА -->
+            <!-- КАРТОЧКА БЕЙДЖА -->
             <div class="border-4 border-black rounded-xl overflow-hidden bg-white text-black font-sans shadow-lg">
                 
                 <!-- 1. ШАПКА -->
@@ -257,7 +213,7 @@
                     </div>
                 </div>
 
-                <!-- 2. ВЕРХНИЙ БЛОК ДАННЫХ -->
+                <!-- 2. СРЕДНИЙ БЛОК -->
                 <div class="p-4 grid grid-cols-12 gap-4 border-b-2 border-black items-stretch">
                     <div class="col-span-3 border-2 border-black rounded-lg overflow-hidden bg-slate-100 aspect-[3/4] flex flex-col items-center justify-center relative">
                         <img id="badge-photo" src="" alt="ФОТО" class="w-full h-full object-cover">
@@ -267,11 +223,11 @@
                     <div class="col-span-5 space-y-2.5 justify-center flex flex-col pl-2">
                         <div>
                             <span class="text-[11px] font-extrabold text-black uppercase block">Ф.И.О.:</span>
-                            <span id="badge-fio" class="font-black text-lg text-black uppercase leading-tight block">EDE2</span>
+                            <span id="badge-fio" class="font-black text-lg text-black uppercase leading-tight block"></span>
                         </div>
                         <div>
                             <span class="text-[11px] font-extrabold text-black uppercase block">ДОЛЖНОСТЬ:</span>
-                            <span id="badge-pos" class="font-black text-base text-black uppercase leading-tight block">ВОДИТЕЛЬ КАРЬЕРНОГО САМОСВАЛА</span>
+                            <span id="badge-pos" class="font-black text-base text-black uppercase leading-tight block"></span>
                         </div>
                         <div>
                             <span class="text-[11px] font-extrabold text-black uppercase block">ОРГАНИЗАЦИЯ:</span>
@@ -284,7 +240,7 @@
                             <span class="text-2xl">📅</span>
                             <div class="text-right">
                                 <span class="text-[9px] font-extrabold uppercase text-slate-700 block">СРОК ДЕЙСТВИЯ</span>
-                                <span id="badge-dates" class="font-black text-sm text-[#C8102E] block">С 10.08.2026<br>ПО 10.08.2027</span>
+                                <span id="badge-dates" class="font-black text-sm text-[#C8102E] block"></span>
                             </div>
                         </div>
 
@@ -295,18 +251,15 @@
                         </div>
 
                         <div class="border-2 border-black rounded-lg p-1.5 text-center bg-white font-mono">
-                            <span class="font-black text-lg text-[#C8102E]">№ <span id="badge-num">000123</span></span>
+                            <span class="font-black text-lg text-[#C8102E]">№ <span id="badge-num">000001</span></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. НИЖНИЙ БЛОК (УВЕЛИЧЕННЫЕ ШРИФТЫ ДЛЯ ПЕЧАТИ) -->
+                <!-- 3. НИЖНИЙ БЛОК (КРУПНЫЕ ШРИФТЫ ДЛЯ ПЕЧАТИ) -->
                 <div class="p-3.5 grid grid-cols-12 gap-4 text-xs leading-normal bg-white">
-                    
-                    <!-- КАТЕГОРИИ ДОПУСКА -->
                     <div class="col-span-3 border-r-2 border-slate-300 pr-3 space-y-2">
                         <span class="font-black uppercase text-black block text-center border-b-2 border-slate-900 pb-1 text-[11px]">КАТЕГОРИИ ДОПУСКА</span>
-                        
                         <div class="flex items-start space-x-2">
                             <span class="bg-emerald-700 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">A</span>
                             <div>
@@ -314,7 +267,6 @@
                                 <span class="text-[10px] font-semibold text-slate-700 block leading-tight">Работникам ТОО «КАЗФОСФАТ». До 1 года.</span>
                             </div>
                         </div>
-
                         <div class="flex items-start space-x-2">
                             <span class="bg-amber-600 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">B</span>
                             <div>
@@ -322,7 +274,6 @@
                                 <span class="text-[10px] font-semibold text-slate-700 block leading-tight">Подрядным организациям. До 6 месяцев.</span>
                             </div>
                         </div>
-
                         <div class="flex items-start space-x-2">
                             <span class="bg-blue-700 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">C</span>
                             <div>
@@ -332,15 +283,12 @@
                         </div>
                     </div>
 
-                    <!-- СТАТУС И УСЛОВИЯ ДОПУСКА -->
                     <div class="col-span-5 border-r-2 border-slate-300 px-3 space-y-2">
                         <span class="font-black uppercase text-black block text-center border-b-2 border-slate-900 pb-1 text-[11px]">СТАТУС И УСЛОВИЯ ДОПУСКА</span>
-                        
                         <div class="flex items-center space-x-1.5 justify-center my-1 bg-emerald-50 py-1 rounded border border-emerald-200">
                             <span class="text-emerald-700 text-lg font-black">✓</span>
                             <span class="font-black text-emerald-800 uppercase text-xs tracking-wide">ДОПУСК ДЕЙСТВИТЕЛЕН</span>
                         </div>
-
                         <ul class="space-y-1 text-[11px] font-extrabold text-slate-900">
                             <li class="flex items-start"><span class="text-emerald-700 font-black mr-1.5">✓</span> <span>Пройден инструктаж по охране труда</span></li>
                             <li class="flex items-start"><span class="text-emerald-700 font-black mr-1.5">✓</span> <span>Ознакомлен с требованиями ПБ и ОТ</span></li>
@@ -350,10 +298,8 @@
                         </ul>
                     </div>
 
-                    <!-- ПРАВИЛА ПОВЕДЕНИЯ -->
                     <div class="col-span-4 pl-2 space-y-2">
                         <span class="font-black uppercase text-black block text-center border-b-2 border-slate-900 pb-1 text-[11px]">ПРАВИЛА ПОВЕДЕНИЯ</span>
-                        
                         <ul class="space-y-1 text-[10.5px] font-extrabold text-slate-900">
                             <li class="flex items-start"><span class="mr-1 shrink-0">🛡</span> <span>Соблюдай требования ПБ и охраны труда</span></li>
                             <li class="flex items-start"><span class="mr-1 shrink-0">🚗</span> <span>Соблюдай скоростной режим и ПДД</span></li>
@@ -363,10 +309,9 @@
                             <li class="flex items-start"><span class="mr-1 shrink-0">⚠️</span> <span>Сообщай о всех опасностях и инцидентах</span></li>
                         </ul>
                     </div>
-
                 </div>
 
-                <!-- 4. НИЖНИЙ БАННЕР -->
+                <!-- 4. БАННЕР -->
                 <div class="bg-black text-white text-[11px] py-2 text-center font-black uppercase tracking-wider flex justify-center items-center gap-2 border-t-2 border-black">
                     <span class="text-white text-base">🛡</span>
                     <span>БЕЗОПАСНОСТЬ – НАШ ПРИОРИТЕТ! СОБЛЮДАЙ ПРАВИЛА – СОХРАНИ ЖИЗНЬ!</span>
@@ -423,367 +368,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT СНАРУЖИ СТРАНИЦЫ -->
-    <script>
-        const DEFAULT_SPECIALTIES = {
-            "dumper": "Водитель карьерного самосвала",
-            "car_driver": "Водитель легкового автомобиля",
-            "truck_driver": "Водитель грузового автомобиля",
-            "bus_driver": "Водитель автобуса",
-            "trailer_driver": "Водитель автомобиля с прицепом",
-            "fuel_driver": "Водитель топливозаправщика",
-            "dopog_driver": "Водитель (ДОПОГ)",
-            "excavator": "Машинист экскаватора",
-            "loader": "Машинист фронтального погрузчика",
-            "bulldozer": "Машинист бульдозера",
-            "grader": "Машинист автогрейдера",
-            "roller": "Машинист дорожного катка",
-            "telehandler": "Машинист телескопического погрузчика",
-            "drilling_rig": "Машинист буровой установки",
-            "operator": "Оператор технологического оборудования",
-            "auto_mechanic": "Слесарь по ремонту автомобилей",
-            "machinery_mechanic": "Слесарь по ремонту самоходной техники",
-            "mechanic": "Механик участка",
-            "foreman": "Мастер участка",
-            "other": "Другая должность"
-        };
-
-        function getSpecialties() {
-            const saved = localStorage.getItem('kpp_specialties');
-            return saved ? JSON.parse(saved) : DEFAULT_SPECIALTIES;
-        }
-
-        function saveSpecialties(specs) {
-            localStorage.setItem('kpp_specialties', JSON.stringify(specs));
-            populateSpecialtySelects();
-        }
-
-        function getQuestions() {
-            const saved = localStorage.getItem('kpp_questions');
-            if (saved) return JSON.parse(saved);
-            
-            const demo = [
-                { id: 1, category: "dumper", text_ru: "Какое главное правило при движении на уклоне?", text_kk: "Еңісте қозғалыс кезiндегi негiзгi ереже?", options_ru: ["Включить нейтралку", "Использовать тормоз-замедлитель", "Держать высокую скорость"], options_kk: ["Нейтралды қосу", "Баяулатқыш тормозды пайдалану", "Жоғары жылдамдықты ұстау"], correct: 1 },
-                { id: 2, category: "excavator", text_ru: "Минимальное расстояние до края уступа?", text_kk: "Кемер жиегіне дейінгі ең аз қашықтық?", options_ru: ["1 метр", "2 метра", "Не менее 3 метров"], options_kk: ["1 метр", "2 метр", "Кемінде 3 метр"], correct: 2 }
-            ];
-            localStorage.setItem('kpp_questions', JSON.stringify(demo));
-            return demo;
-        }
-
-        function getResults() {
-            const saved = localStorage.getItem('kpp_results');
-            if (saved) return JSON.parse(saved);
-            
-            const demo = [
-                { id: 1, date: "2026-08-09 10:15", fio: "Ахметов Арман Серикович", iin: "900101300123", positionKey: "dumper", position: "Водитель карьерного самосвала", score: "9/10", passed: true, category: "A", issueDate: "2026-08-10" },
-                { id: 2, date: "2026-08-09 11:30", fio: "Иванов Иван Иванович", iin: "850505400987", positionKey: "excavator", position: "Машинист экскаватора", score: "5/10", passed: false, category: "B", issueDate: "2026-08-10" }
-            ];
-            localStorage.setItem('kpp_results', JSON.stringify(demo));
-            return demo;
-        }
-
-        async function loginAdmin(e) {
-            e.preventDefault();
-            const login = document.getElementById('admin-login').value.trim();
-            const pass = document.getElementById('admin-password').value.trim();
-            const err = document.getElementById('login-error');
-
-            try {
-                const body = new URLSearchParams();
-                body.append('username', login);
-                body.append('password', pass);
-
-                const response = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: body.toString()
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem('adminToken', data.token);
-                    document.getElementById('admin-login-screen').classList.add('hidden');
-                    document.getElementById('admin-app').classList.remove('hidden');
-                    initAdmin();
-                    return;
-                }
-            } catch (error) {
-                console.log("Офлайн режим...");
-            }
-
-            if (login === 'admin' && (pass === 'kazphosphate' || pass === 'admin')) {
-                document.getElementById('admin-login-screen').classList.add('hidden');
-                document.getElementById('admin-app').classList.remove('hidden');
-                initAdmin();
-            } else {
-                err.textContent = 'Неверный логин или пароль';
-                err.classList.remove('hidden');
-            }
-        }
-
-        function initAdmin() {
-            populateSpecialtySelects();
-            renderResultsTable();
-            renderQuestionsTable();
-            renderSpecialtiesTable();
-        }
-
-        function switchTab(tab) {
-            ['results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
-                const btn = document.getElementById(`tab-${t}-btn`);
-                if(btn) btn.className = "px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition";
-            });
-
-            document.getElementById('tab-results').classList.add('hidden');
-            document.getElementById('tab-questions-list').classList.add('hidden');
-            document.getElementById('tab-add-question').classList.add('hidden');
-            document.getElementById('tab-specialties').classList.add('hidden');
-
-            const activeBtn = document.getElementById(`tab-${tab.replace('_', '-')}-btn`);
-            if (activeBtn) activeBtn.className = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition";
-            document.getElementById(`tab-${tab.replace('_', '-')}`).classList.remove('hidden');
-        }
-
-        function populateSpecialtySelects() {
-            const specs = getSpecialties();
-            const selects = [
-                { id: 'q_category', placeholder: null },
-                { id: 'edit-q-category', placeholder: null },
-                { id: 'filter-spec', placeholder: 'Все специальности' },
-                { id: 'filter-q-category', placeholder: 'Все категории' }
-            ];
-
-            selects.forEach(item => {
-                const el = document.getElementById(item.id);
-                if (!el) return;
-                const currentVal = el.value;
-                el.innerHTML = '';
-
-                if (item.placeholder) {
-                    const opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = item.placeholder;
-                    el.appendChild(opt);
-                }
-
-                Object.keys(specs).forEach(key => {
-                    const opt = document.createElement('option');
-                    opt.value = key;
-                    opt.textContent = specs[key];
-                    el.appendChild(opt);
-                });
-
-                if (currentVal) el.value = currentVal;
-            });
-        }
-
-        function renderResultsTable() {
-            const results = getResults();
-            const specs = getSpecialties();
-            const tbody = document.getElementById('results-table-body');
-            const search = document.getElementById('search-results').value.toLowerCase();
-            const filterSpec = document.getElementById('filter-spec').value;
-            const filterStatus = document.getElementById('filter-status').value;
-
-            tbody.innerHTML = '';
-
-            const filtered = results.filter(r => {
-                const matchSearch = r.fio.toLowerCase().includes(search) || (r.iin && r.iin.includes(search));
-                const matchSpec = !filterSpec || r.positionKey === filterSpec;
-                const matchStatus = !filterStatus || (filterStatus === 'pass' ? r.passed : !r.passed);
-                return matchSearch && matchSpec && matchStatus;
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Результаты не найдены</td></tr>`;
-                return;
-            }
-
-            filtered.forEach(r => {
-                const posName = specs[r.positionKey] || r.position || 'Не указана';
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 border-b';
-                tr.innerHTML = `
-                    <td class="p-2.5 border-r font-mono text-slate-500">${r.date}</td>
-                    <td class="p-2.5 border-r font-bold">${r.fio}<br><span class="font-mono text-[10px] text-slate-400">ИИН: ${r.iin || '—'}</span></td>
-                    <td class="p-2.5 border-r">${posName}</td>
-                    <td class="p-2.5 border-r">
-                        <span class="px-2 py-0.5 rounded font-bold ${r.passed ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
-                            ${r.score} (${r.passed ? 'Сдал' : 'Не сдал'})
-                        </span>
-                    </td>
-                    <td class="p-2.5 border-r text-center">
-                        ${r.passed ? `<button onclick="openPassEditModal(${r.id})" class="px-2.5 py-1 bg-slate-900 text-white font-bold rounded text-[10px] hover:bg-slate-800">🪪 Пропуск</button>` : '<span class="text-slate-400">—</span>'}
-                    </td>
-                    <td class="p-2.5 text-center">
-                        <button onclick="deleteResult(${r.id})" class="text-red-600 hover:text-red-800 font-bold">Удалить</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function deleteResult(id) {
-            if(!confirm('Удалить эту запись?')) return;
-            let results = getResults().filter(r => r.id !== id);
-            localStorage.setItem('kpp_results', JSON.stringify(results));
-            renderResultsTable();
-        }
-
-        function renderQuestionsTable() {
-            const questions = getQuestions();
-            const specs = getSpecialties();
-            const tbody = document.getElementById('questions-table-body');
-            const search = document.getElementById('search-questions').value.toLowerCase();
-            const filterCat = document.getElementById('filter-q-category').value;
-
-            tbody.innerHTML = '';
-
-            const filtered = questions.filter(q => {
-                const matchSearch = q.text_ru.toLowerCase().includes(search) || q.text_kk.toLowerCase().includes(search);
-                const matchCat = !filterCat || q.category === filterCat;
-                return matchSearch && matchCat;
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Вопросы не найдены</td></tr>`;
-                return;
-            }
-
-            filtered.forEach(q => {
-                const specName = specs[q.category] || q.category;
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 border-b';
-                tr.innerHTML = `
-                    <td class="p-2.5 border-r font-mono text-slate-400">${q.id}</td>
-                    <td class="p-2.5 border-r font-semibold">${specName}</td>
-                    <td class="p-2.5 border-r">
-                        <div class="font-bold text-slate-800">${q.text_ru}</div>
-                        <div class="text-slate-500 italic mt-0.5">${q.text_kk}</div>
-                    </td>
-                    <td class="p-2.5 border-r text-[11px]">
-                        <b>RU:</b> ${Array.isArray(q.options_ru) ? q.options_ru.join(', ') : q.options_ru}<br>
-                        <b class="text-slate-500">KK:</b> ${Array.isArray(q.options_kk) ? q.options_kk.join(', ') : q.options_kk}
-                    </td>
-                    <td class="p-2.5 border-r text-center font-bold text-emerald-700">Индекс: ${q.correct}</td>
-                    <td class="p-2.5 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="openEditQuestionModal(${q.id})" class="text-blue-600 hover:text-blue-800 font-bold">✏️ Изменить</button>
-                            <button onclick="deleteQuestion(${q.id})" class="text-red-600 hover:text-red-800 font-bold">✕</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function openPassEditModal(id) {
-            const res = getResults().find(r => r.id === id);
-            if (!res) return;
-
-            const specs = getSpecialties();
-            const posTitle = specs[res.positionKey] || res.position || 'Специалист';
-
-            document.getElementById('editPassId').value = res.id;
-            document.getElementById('editFullName').value = res.fio;
-            document.getElementById('editIin').value = res.iin || '';
-            document.getElementById('editPosition').value = posTitle;
-            document.getElementById('editIssueDate').value = res.issueDate || '2026-08-10';
-            document.getElementById('editCategory').value = res.category || 'A';
-
-            calculateExpiryPreview();
-            document.getElementById('passEditModal').classList.remove('hidden');
-        }
-
-        function closePassModal() {
-            document.getElementById('passEditModal').classList.add('hidden');
-        }
-
-        function calculateExpiryPreview() {
-            const issueDateVal = document.getElementById('editIssueDate').value;
-            const cat = document.getElementById('editCategory').value;
-            if (!issueDateVal) return;
-
-            const d = new Date(issueDateVal);
-            if (cat === 'A') d.setFullYear(d.getFullYear() + 1);
-            else if (cat === 'B') d.setMonth(d.getMonth() + 6);
-            else d.setDate(d.getDate() + 1);
-
-            document.getElementById('expiryPreviewText').textContent = d.toLocaleDateString('ru-RU');
-        }
-
-        function savePassCard(e) {
-            e.preventDefault();
-            const id = parseInt(document.getElementById('editPassId').value);
-            const results = getResults();
-            const res = results.find(r => r.id === id);
-
-            if (res) {
-                res.fio = document.getElementById('editFullName').value;
-                res.iin = document.getElementById('editIin').value;
-                res.position = document.getElementById('editPosition').value;
-                res.category = document.getElementById('editCategory').value;
-                res.issueDate = document.getElementById('editIssueDate').value;
-
-                localStorage.setItem('kpp_results', JSON.stringify(results));
-                closePassModal();
-                showBadgeModal(res);
-            }
-        }
-
-        function showBadgeModal(data) {
-            document.getElementById('badge-num').textContent = String(data.id).padStart(6, '0');
-            document.getElementById('badge-fio').textContent = data.fio;
-            document.getElementById('badge-pos').textContent = data.position;
-            document.getElementById('badge-organization').textContent = 'ТОО «КАЗФОСФАТ»';
-
-            const issueDate = new Date(data.issueDate || '2026-08-10');
-            const expDate = new Date(issueDate);
-
-            let catSubText = 'ПОСТОЯННЫЙ';
-            if (data.category === 'A') {
-                expDate.setFullYear(expDate.getFullYear() + 1);
-                catSubText = 'ПОСТОЯННЫЙ';
-            } else if (data.category === 'B') {
-                expDate.setMonth(expDate.getMonth() + 6);
-                catSubText = 'ВРЕМЕННЫЙ';
-            } else {
-                expDate.setDate(expDate.getDate() + 1);
-                catSubText = 'РАЗОВЫЙ';
-            }
-
-            document.getElementById('badge-dates').innerHTML = `С ${issueDate.toLocaleDateString('ru-RU')}<br>ПО ${expDate.toLocaleDateString('ru-RU')}`;
-            document.getElementById('badge-category-title').textContent = data.category || 'A';
-            document.getElementById('badge-category-sub').textContent = catSubText;
-            
-            document.getElementById('badge-photo').src = data.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fio)}&background=000&color=fff&size=200`;
-
-            document.getElementById('badge-modal').classList.remove('hidden');
-        }
-
-        function closeBadgeModal() {
-            document.getElementById('badge-modal').classList.add('hidden');
-        }
-
-        function exportResultsCSV() {
-            const results = getResults();
-            const specs = getSpecialties();
-
-            let csv = '\uFEFF';
-            csv += 'Дата;ФИО;ИИН;Должность;Результат;Статус\n';
-
-            results.forEach(r => {
-                const pos = specs[r.positionKey] || r.position || '';
-                const status = r.passed ? 'Сдал' : 'Не сдал';
-                csv += `"${r.date}";"${r.fio}";"${r.iin || ''}";"${pos}";"${r.score}";"${status}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Результаты_тестирования_Казфосфат_${new Date().toISOString().slice(0,10)}.csv`;
-            link.click();
-        }
-    </script>
+    <!-- ЕДИНСТВЕННЫЙ ПОДКТЮЧЕННЫЙ ОБРАБОТЧИК АДМИНКИ -->
+    <script src="js/admin.js"></script>
 </body>
 </html>

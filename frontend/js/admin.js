@@ -1,8 +1,7 @@
 let globalResults = [];
 let adminToken = '';
-const API_BASE = ''; // Относительный путь для работы на хостинге
+const API_BASE = ''; 
 
-// Все специальности ТОО «Казфосфат»
 const positionNames = {
     'dumper': 'Водитель карьерного самосвала',
     'car_driver': 'Водитель легкового автомобиля',
@@ -26,7 +25,6 @@ const positionNames = {
     'other': 'Другая должность'
 };
 
-// Вспомогательная функция для авторизованных запросов
 function adminFetch(path, options = {}) {
     options.headers = options.headers || {};
     if (adminToken) {
@@ -57,7 +55,7 @@ function showAdminApp() {
 }
 
 // ------------------------------------------------------------------
-// 1. АВТОРИЗАЦИЯ
+// 1. АВТОРИЗАЦИЯ (admin / kazphosphate)
 // ------------------------------------------------------------------
 async function loginAdmin(e) {
     e.preventDefault();
@@ -97,11 +95,11 @@ async function loginAdmin(e) {
 }
 
 // ------------------------------------------------------------------
-// 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК В АДМИНКЕ
+// 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
 // ------------------------------------------------------------------
 function switchTab(tab) {
     const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider";
-    const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-kpp-navy bg-white border border-kpp-border text-xs uppercase tracking-wider";
+    const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-slate-900 bg-white border border-slate-300 text-xs uppercase tracking-wider";
 
     document.getElementById('tab-results')?.classList.add('hidden');
     document.getElementById('tab-questions-list')?.classList.add('hidden');
@@ -126,7 +124,7 @@ function switchTab(tab) {
 }
 
 // ------------------------------------------------------------------
-// 3. ЗАГРУЗКА, УДАЛЕНИЕ И ЭКСПОРТ РЕЗУЛЬТАТОВ
+// 3. ЗАГРУЗКА ИЗ БАЗЫ ДАННЫХ
 // ------------------------------------------------------------------
 async function loadResults() {
     try {
@@ -137,8 +135,8 @@ async function loadResults() {
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        if (globalResults.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Результаты пока отсутствуют</td></tr>`;
+        if (!Array.isArray(globalResults) || globalResults.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400 font-bold">Результаты в базе данных отсутствуют</td></tr>`;
             return;
         }
 
@@ -221,7 +219,7 @@ async function exportResultsCSV() {
 }
 
 // ------------------------------------------------------------------
-// 4. УПРАВЛЕНИЕ КАРТОЙ ДОПУСКА (БЕЙДЖИ)
+// 4. КАРТА ДОПУСКА (ПЕЧАТЬ И РЕДАКТИРОВАНИЕ)
 // ------------------------------------------------------------------
 function openBadgeModal(index) {
     const res = globalResults[index];
@@ -258,9 +256,9 @@ function calculateExpiryPreview() {
     if (category === 'A') {
         endDate.setFullYear(endDate.getFullYear() + 1);
     } else if (category === 'B') {
-        endDate.setMonth(endDate.getMonth() + 6); // 6 месяцев
+        endDate.setMonth(endDate.getMonth() + 6);
     } else if (category === 'C') {
-        endDate.setDate(endDate.getDate() + 1);   // 24 часа
+        endDate.setDate(endDate.getDate() + 1);
     }
 
     previewElem.innerText = endDate.toLocaleDateString('ru-RU');
@@ -454,9 +452,7 @@ async function submitQuestion(e) {
     }
 }
 
-// ------------------------------------------------------------------
-// 6. ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
-// ------------------------------------------------------------------
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
     adminToken = localStorage.getItem('adminToken') || '';
     if (adminToken) {
