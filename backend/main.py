@@ -195,13 +195,13 @@ async def submit_quiz(
     full_name: str = Form(...),
     birth_date: str = Form(None),
     position: str = Form(...),
-    iin: str = Form(None),
-    phone: str = Form(None),
-    citizenship: str = Form(None),
+    iin: Optional[str] = Form(None),        # ИИН сделан необязательным
+    phone: Optional[str] = Form(None),
+    citizenship: Optional[str] = Form(None),
     answers: str = Form(...),
     photo_user: UploadFile = File(None),
     photo_license: UploadFile = File(None),
-    photo_id_card: UploadFile = File(None),
+    photo_id_card: UploadFile = File(None),  # Удостоверение машиниста
     db: Session = Depends(get_db)
 ):
     user_photo_path = save_upload_file(photo_user)
@@ -325,11 +325,10 @@ def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = De
     
     emp_id = res.employee_id
     
-    # Каскадное удаление: сначала удаляем сам результат
+    # Каскадное удаление
     db.delete(res)
     db.commit()
 
-    # Затем удаляем связанные с ним данные сотрудника и пропуск
     if emp_id:
         emp = db.query(models.Employee).filter(models.Employee.id == emp_id).first()
         if emp:
@@ -436,14 +435,14 @@ def delete_question(q_id: int, db: Session = Depends(get_db), admin_auth: str = 
 def calculate_expiry_date(start_date: date, category: str) -> date:
     """
     A (Постоянный) — 1 год
-    B (Временный) — 90 дней
+    B (Временный) — 6 месяцев (180 дней)
     C (Разовый) — 1 день (24 часа)
     """
     cat = (category or "A").upper()
     if cat == 'A':
         return start_date + relativedelta(years=1)
     elif cat == 'B':
-        return start_date + relativedelta(days=90)
+        return start_date + relativedelta(months=6)
     elif cat == 'C':
         return start_date + relativedelta(days=1)
     return start_date + relativedelta(years=1)
@@ -453,11 +452,11 @@ class PassCardUpdateSchema(BaseModel):
     iin: Optional[str] = None
     position: Optional[str] = None
     organization: Optional[str] = None
-    personnel_number: Optional[str] = None  # Табельный №
-    work_type: Optional[str] = None         # Вид работ
-    access_zone: Optional[str] = None       # Разрешенная зона
-    vehicle_info: Optional[str] = None      # ТС
-    issued_time: Optional[str] = None       # Время выдачи
+    personnel_number: Optional[str] = None
+    work_type: Optional[str] = None
+    access_zone: Optional[str] = None
+    vehicle_info: Optional[str] = None
+    issued_time: Optional[str] = None
     responsible_person: Optional[str] = None
     category: Optional[str] = None
     issue_date: Optional[date] = None

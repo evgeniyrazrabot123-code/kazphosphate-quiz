@@ -2,7 +2,7 @@ let currentLang = 'ru';
 let loadedQuestions = [];
 let isSubmitting = false; // Блокировка от повторных кликов и дублей
 
-// Все 20 специальностей ТОО «Казфосфат»
+// Все специальности ТОО «Казфосфат»
 const positionNames = {
     'dumper': 'Водитель карьерного самосвала',
     'car_driver': 'Водитель легкового автомобиля',
@@ -31,11 +31,11 @@ const translations = {
         subHeader: 'Система аттестации персонала и оценки производственных допусков',
         sec1Title: 'Раздел 1. Данные сотрудника',
         lblFio: '1. Фамилия, имя, отчество (полностью)',
-        lblIin: '2. ИИН сотрудника',
-        lblPhone: '3. Контактный телефон',
-        lblBirth: '4. Дата рождения',
-        lblCitizenship: '5. Гражданство',
-        lblPos: '6. Специальность / Должность',
+        lblIin: '2. ИИН сотрудника (при наличии)',
+        lblPhone: '2. Контактный телефон',
+        lblBirth: '3. Дата рождения',
+        lblCitizenship: '4. Гражданство',
+        lblPos: '5. Специальность / Должность',
         btnNext: 'Перейти к тестированию →',
         sec2Title: 'Раздел 2. Проверка профессиональных знаний',
         btnBack: '← Назад',
@@ -49,11 +49,11 @@ const translations = {
         subHeader: 'Персоналды тестирования және өндірістік рұқсаттарды бағалау жүйесі',
         sec1Title: '1-Бөлім. Қызметкердің мәліметтері',
         lblFio: '1. Тегі, аты, әкесінің аты (толық)',
-        lblIin: '2. Қызметкердің ЖСН',
-        lblPhone: '3. Байланыс телефоны',
-        lblBirth: '4. Туған күні',
-        lblCitizenship: '5. Азаматтығы',
-        lblPos: '6. Мамандығы / Лауазымы',
+        lblIin: '2. Қызметкердің ЖСН (бар болса)',
+        lblPhone: '2. Байланыс телефоны',
+        lblBirth: '3. Туған күні',
+        lblCitizenship: '4. Азаматтығы',
+        lblPos: '5. Мамандығы / Лауазымы',
         btnNext: 'Тестке өту →',
         sec2Title: '2-Бөлім. Кәсіби білімді тексеру',
         btnBack: '← Артқа',
@@ -115,10 +115,9 @@ function setLanguage(lang) {
     }
 }
 
-// 2. ВАЛИДАЦИЯ
+// 2. ВАЛИДАЦИЯ (БЕЗ ОБЯЗАТЕЛЬНОЙ ПРОВЕРКИ ИИН)
 async function goToStep2() {
     const fullName = document.getElementById('full_name')?.value.trim();
-    const iin = document.getElementById('iin')?.value.trim();
     const phone = document.getElementById('phone')?.value.trim();
     const birthDate = document.getElementById('birth_date')?.value;
     const citizenship = document.getElementById('citizenship')?.value.trim();
@@ -126,12 +125,6 @@ async function goToStep2() {
     if (!fullName) {
         alert(currentLang === 'ru' ? 'Пожалуйста, введите ФИО полностью!' : 'Өтініш, Т.А.Ә. толық енгізіңіз!');
         document.getElementById('full_name')?.focus();
-        return;
-    }
-
-    if (!iin || iin.length !== 12 || isNaN(iin)) {
-        alert(currentLang === 'ru' ? 'ИИН должен состоять строго из 12 цифр!' : 'ЖСН қатаң түрде 12 саннан тұруы керек!');
-        document.getElementById('iin')?.focus();
         return;
     }
 
@@ -197,7 +190,7 @@ async function loadQuestions() {
 
         loadedQuestions.forEach((q, idx) => {
             const qBox = document.createElement('div');
-            qBox.className = "question-card p-4 rounded border border-kpp-border bg-slate-50/50 space-y-3";
+            qBox.className = "question-card p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3";
             qBox.setAttribute('data-id', q.id);
 
             // 🔀 2. ПРИВЯЗЫВАЕМ НАСТОЯЩИЙ ИНДЕКС К КАЖДОМУ ВАРИАНТУ И ПЕРЕМЕШИВАЕМ ВАРИАНТЫ
@@ -214,7 +207,7 @@ async function loadQuestions() {
                 optionsHtml += `
                     <div>
                         <input type="radio" id="${radioId}" name="q_${q.id}" value="${optObj.originalIndex}" class="hidden custom-radio">
-                        <label for="${radioId}" class="flex items-center p-3 border border-kpp-border rounded cursor-pointer hover:bg-white transition-all bg-white text-xs">
+                        <label for="${radioId}" class="flex items-center p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-white transition-all bg-white text-xs">
                             <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center mr-3 shrink-0 dot-outer">
                                 <span class="w-2 h-2 rounded-full dot-inner scale-0 transition-transform"></span>
                             </span>
@@ -225,7 +218,7 @@ async function loadQuestions() {
             });
 
             qBox.innerHTML = `
-                <p class="font-bold text-kpp-navy text-xs sm:text-sm"><span class="text-kpp-red mr-1.5">${idx + 1}.</span>${q.text}</p>
+                <p class="font-bold text-slate-900 text-xs sm:text-sm"><span class="text-kpp-red mr-1.5">${idx + 1}.</span>${q.text}</p>
                 <div class="space-y-2">${optionsHtml}</div>
             `;
             container.appendChild(qBox);
@@ -338,8 +331,8 @@ async function handleFormSubmit(e) {
 
                         const card = document.createElement('div');
                         card.className = item.is_correct
-                            ? "p-3.5 rounded border border-emerald-200 bg-emerald-50/60 text-xs space-y-1.5 text-left"
-                            : "p-3.5 rounded border border-red-200 bg-red-50/60 text-xs space-y-1.5 text-left";
+                            ? "p-3.5 rounded-lg border border-emerald-200 bg-emerald-50/60 text-xs space-y-1.5 text-left"
+                            : "p-3.5 rounded-lg border border-red-200 bg-red-50/60 text-xs space-y-1.5 text-left";
 
                         const badge = item.is_correct
                             ? `<span class="px-2 py-0.5 bg-emerald-700 text-white font-bold rounded text-[10px] uppercase shrink-0">Верно</span>`
@@ -347,7 +340,7 @@ async function handleFormSubmit(e) {
 
                         card.innerHTML = `
                             <div class="flex justify-between items-start gap-2">
-                                <p class="font-bold text-kpp-navy"><span class="mr-1">${index + 1}.</span>${qText}</p>
+                                <p class="font-bold text-slate-900"><span class="mr-1">${index + 1}.</span>${qText}</p>
                                 ${badge}
                             </div>
                             <div class="text-[11px] space-y-0.5 pt-1.5 border-t border-slate-200/60">
@@ -384,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextButton = document.getElementById('btn-next');
 
     if (quizForm) {
-        quizForm.removeEventListener('submit', handleFormSubmit); // Сбрасываем старые обработчики
+        quizForm.removeEventListener('submit', handleFormSubmit);
         quizForm.addEventListener('submit', handleFormSubmit);
     }
 
@@ -404,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parent = e.target.closest('div');
                 if (e.target.files.length > 0) {
                     parent.classList.add('bg-emerald-50', 'border-emerald-500');
-                    parent.classList.remove('bg-slate-50', 'border-kpp-border');
+                    parent.classList.remove('bg-white', 'bg-slate-50', 'border-slate-200', 'border-blue-200', 'border-red-200');
                 }
             });
         }

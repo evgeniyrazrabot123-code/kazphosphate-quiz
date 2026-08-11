@@ -1,7 +1,8 @@
 let globalResults = [];
 let adminToken = '';
-const API_BASE = ''; // Относительный путь для хостинга
+const API_BASE = ''; // Относительный путь для работы на хостинге
 
+// Все специальности ТОО «Казфосфат»
 const positionNames = {
     'dumper': 'Водитель карьерного самосвала',
     'car_driver': 'Водитель легкового автомобиля',
@@ -9,7 +10,7 @@ const positionNames = {
     'bus_driver': 'Водитель автобуса',
     'trailer_driver': 'Водитель автомобиля с прицепом',
     'fuel_driver': 'Водитель топливозаправщика',
-    'dopog_driver': 'Водитель ТС для перевозки опасных грузов (ДОПОГ)',
+    'dopog_driver': 'Водитель (ДОПОГ)',
     'excavator': 'Машинист экскаватора',
     'loader': 'Машинист фронтального погрузчика',
     'bulldozer': 'Машинист бульдозера',
@@ -25,6 +26,7 @@ const positionNames = {
     'other': 'Другая должность'
 };
 
+// Вспомогательная функция для авторизованных запросов
 function adminFetch(path, options = {}) {
     options.headers = options.headers || {};
     if (adminToken) {
@@ -54,6 +56,9 @@ function showAdminApp() {
     document.getElementById('admin-app')?.classList.remove('hidden');
 }
 
+// ------------------------------------------------------------------
+// 1. АВТОРИЗАЦИЯ
+// ------------------------------------------------------------------
 async function loginAdmin(e) {
     e.preventDefault();
 
@@ -92,36 +97,36 @@ async function loginAdmin(e) {
 }
 
 // ------------------------------------------------------------------
-// 1. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК В АДМИНКЕ
+// 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК В АДМИНКЕ
 // ------------------------------------------------------------------
 function switchTab(tab) {
-    const activeClass = "px-4 py-2 font-bold rounded bg-kpp-navy text-white text-xs uppercase tracking-wider";
+    const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider";
     const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-kpp-navy bg-white border border-kpp-border text-xs uppercase tracking-wider";
 
-    document.getElementById('tab-results').classList.add('hidden');
-    document.getElementById('tab-questions-list').classList.add('hidden');
-    document.getElementById('tab-add-question').classList.add('hidden');
+    document.getElementById('tab-results')?.classList.add('hidden');
+    document.getElementById('tab-questions-list')?.classList.add('hidden');
+    document.getElementById('tab-add-question')?.classList.add('hidden');
 
-    document.getElementById('tab-results-btn').className = inactiveClass;
-    document.getElementById('tab-questions-list-btn').className = inactiveClass;
-    document.getElementById('tab-add-question-btn').className = inactiveClass;
+    if (document.getElementById('tab-results-btn')) document.getElementById('tab-results-btn').className = inactiveClass;
+    if (document.getElementById('tab-questions-list-btn')) document.getElementById('tab-questions-list-btn').className = inactiveClass;
+    if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = inactiveClass;
 
     if (tab === 'results') {
-        document.getElementById('tab-results').classList.remove('hidden');
-        document.getElementById('tab-results-btn').className = activeClass;
+        document.getElementById('tab-results')?.classList.remove('hidden');
+        if (document.getElementById('tab-results-btn')) document.getElementById('tab-results-btn').className = activeClass;
         loadResults();
     } else if (tab === 'questions_list') {
-        document.getElementById('tab-questions-list').classList.remove('hidden');
-        document.getElementById('tab-questions-list-btn').className = activeClass;
+        document.getElementById('tab-questions-list')?.classList.remove('hidden');
+        if (document.getElementById('tab-questions-list-btn')) document.getElementById('tab-questions-list-btn').className = activeClass;
         loadQuestionsList();
     } else {
-        document.getElementById('tab-add-question').classList.remove('hidden');
-        document.getElementById('tab-add-question-btn').className = activeClass;
+        document.getElementById('tab-add-question')?.classList.remove('hidden');
+        if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = activeClass;
     }
 }
 
 // ------------------------------------------------------------------
-// 2. ЗАГРУЗКА, УДАЛЕНИЕ И ЭКСПОРТ РЕЗУЛЬТАТОВ
+// 3. ЗАГРУЗКА, УДАЛЕНИЕ И ЭКСПОРТ РЕЗУЛЬТАТОВ
 // ------------------------------------------------------------------
 async function loadResults() {
     try {
@@ -132,6 +137,11 @@ async function loadResults() {
         if (!tbody) return;
         tbody.innerHTML = '';
 
+        if (globalResults.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Результаты пока отсутствуют</td></tr>`;
+            return;
+        }
+
         globalResults.forEach((res, index) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50";
@@ -139,21 +149,21 @@ async function loadResults() {
             const docs = [];
             if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-700 underline font-bold">Фото 3x4</a>`);
             if (res.photo_license) docs.push(`<a href="${res.photo_license}" target="_blank" class="text-blue-700 underline font-bold">Права</a>`);
-            if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-700 underline font-bold">Уд.Личности</a>`);
+            if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-700 underline font-bold">Уд. Машиниста</a>`);
 
             const docsHtml = docs.length > 0 ? docs.join(' | ') : '<span class="text-slate-400">Нет</span>';
             const prettyPosition = positionNames[res.position] || res.position;
 
             tr.innerHTML = `
                 <td class="p-2.5 border-r border-slate-200 font-mono text-[11px]">${res.passed_at}</td>
-                <td class="p-2.5 border-r border-slate-200 font-bold text-kpp-navy">${res.full_name}</td>
+                <td class="p-2.5 border-r border-slate-200 font-bold text-slate-900">${res.full_name}</td>
                 <td class="p-2.5 border-r border-slate-200">${prettyPosition}</td>
                 <td class="p-2.5 border-r border-slate-200 font-bold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">
                     ${res.score} / ${res.total_questions}
                 </td>
                 <td class="p-2.5 border-r border-slate-200">${docsHtml}</td>
                 <td class="p-2.5 text-center border-r border-slate-200">
-                    <button onclick="openBadgeModal(${index})" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded font-bold uppercase transition text-[10px]">
+                    <button onclick="openBadgeModal(${index})" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase transition text-[10px]">
                         🪪 Пропуск
                     </button>
                 </td>
@@ -170,7 +180,6 @@ async function loadResults() {
     }
 }
 
-// 🗑 ФУНКЦИЯ УДАЛЕНИЯ РЕЗУЛЬТАТА
 async function deleteResult(id) {
     if (!confirm("Вы уверены, что хотите полностью удалить этот результат из базы данных?")) return;
 
@@ -180,7 +189,7 @@ async function deleteResult(id) {
         });
 
         if (response.ok) {
-            loadResults(); // Перезагрузить список результатов
+            loadResults();
         } else {
             const errData = await response.json();
             alert("Ошибка при удалении: " + (errData.detail || errData.message || "Не удалось удалить"));
@@ -191,7 +200,6 @@ async function deleteResult(id) {
     }
 }
 
-// 📊 ФУНКЦИЯ ЭКСПОРТА РЕЗУЛЬТАТОВ В EXCEL / CSV
 async function exportResultsCSV() {
     try {
         const response = await adminFetch('/api/admin/results/export/csv');
@@ -213,7 +221,7 @@ async function exportResultsCSV() {
 }
 
 // ------------------------------------------------------------------
-// 3. УПРАВЛЕНИЕ КАРТОЙ ДОПУСКА
+// 4. УПРАВЛЕНИЕ КАРТОЙ ДОПУСКА (БЕЙДЖИ)
 // ------------------------------------------------------------------
 function openBadgeModal(index) {
     const res = globalResults[index];
@@ -224,27 +232,22 @@ function openBadgeModal(index) {
     document.getElementById('editIin').value = res.iin || '';
     document.getElementById('editPosition').value = positionNames[res.position] || res.position || '';
     document.getElementById('editOrganization').value = 'ТОО «КАЗФОСФАТ»';
-    document.getElementById('editPersonnelNum').value = 'КР-07854';
-    document.getElementById('editWorkType').value = 'Производственный контроль, безопасность дорожного движения';
-    document.getElementById('editAccessZone').value = 'Карьер, ДСК, Отвалы, Бункер, Производственная площадка';
-    document.getElementById('editVehicle').value = '—';
-    document.getElementById('editIssuedTime').value = '08:30';
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('editIssueDate').value = today;
     document.getElementById('editCategory').value = 'A';
 
     calculateExpiryPreview();
-    document.getElementById('passEditModal').classList.remove('hidden');
+    document.getElementById('passEditModal')?.classList.remove('hidden');
 }
 
 function closePassModal() {
-    document.getElementById('passEditModal').classList.add('hidden');
+    document.getElementById('passEditModal')?.classList.add('hidden');
 }
 
 function calculateExpiryPreview() {
-    const issueDateVal = document.getElementById('editIssueDate').value;
-    const category = document.getElementById('editCategory').value;
+    const issueDateVal = document.getElementById('editIssueDate')?.value;
+    const category = document.getElementById('editCategory')?.value;
     const previewElem = document.getElementById('expiryPreviewText');
 
     if (!issueDateVal || !previewElem) return;
@@ -255,9 +258,9 @@ function calculateExpiryPreview() {
     if (category === 'A') {
         endDate.setFullYear(endDate.getFullYear() + 1);
     } else if (category === 'B') {
-        endDate.setDate(endDate.getDate() + 90);
+        endDate.setMonth(endDate.getMonth() + 6); // 6 месяцев
     } else if (category === 'C') {
-        endDate.setDate(endDate.getDate() + 1);
+        endDate.setDate(endDate.getDate() + 1);   // 24 часа
     }
 
     previewElem.innerText = endDate.toLocaleDateString('ru-RU');
@@ -272,11 +275,6 @@ async function savePassCard(e) {
         iin: document.getElementById('editIin').value,
         position: document.getElementById('editPosition').value,
         organization: document.getElementById('editOrganization').value,
-        personnel_number: document.getElementById('editPersonnelNum').value,
-        work_type: document.getElementById('editWorkType').value,
-        access_zone: document.getElementById('editAccessZone').value,
-        vehicle_info: document.getElementById('editVehicle').value,
-        issued_time: document.getElementById('editIssuedTime').value,
         category: document.getElementById('editCategory').value,
         issue_date: document.getElementById('editIssueDate').value
     };
@@ -306,53 +304,51 @@ function showFinalBadge(card, passId) {
     const res = globalResults.find(r => r.id == passId) || {};
     const badgeNum = String(card.id || passId).padStart(6, '0');
 
-    const issueFormatted = card.issue_date ? new Date(card.issue_date).toLocaleDateString('ru-RU') : '—';
-    const expiryFormatted = card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('ru-RU') : '—';
+    const issueDate = card.issue_date ? new Date(card.issue_date) : new Date();
+    const expiryDate = card.expiry_date ? new Date(card.expiry_date) : new Date();
 
-    document.getElementById('badge-num').innerText = badgeNum;
-    document.getElementById('badge-fio').innerText = card.full_name || '—';
-    document.getElementById('badge-iin').innerText = card.iin || res.iin || '—';
-    document.getElementById('badge-pos').innerText = card.position || '—';
-    document.getElementById('badge-organization').innerText = card.organization || 'ТОО «КАЗФОСФАТ»';
-    document.getElementById('badge-personnel-num').innerText = card.personnel_number || 'КР-07854';
-    document.getElementById('badge-work-type').innerText = card.work_type || '—';
-    document.getElementById('badge-access-zone').innerText = card.access_zone || 'Карьер, ДСК, Отвалы, Бункер';
-    document.getElementById('badge-vehicle').innerText = card.vehicle_info || '—';
+    if (document.getElementById('badge-num')) document.getElementById('badge-num').innerText = badgeNum;
+    if (document.getElementById('badge-fio')) document.getElementById('badge-fio').innerText = card.full_name || res.full_name || '—';
+    if (document.getElementById('badge-pos')) document.getElementById('badge-pos').innerText = card.position || positionNames[res.position] || res.position || '—';
+    if (document.getElementById('badge-organization')) document.getElementById('badge-organization').innerText = card.organization || 'ТОО «КАЗФОСФАТ»';
 
-    document.getElementById('badge-dates').innerText = `с ${issueFormatted} по ${expiryFormatted}`;
-    document.getElementById('badge-issued-datetime').innerText = `${issueFormatted} ${card.issued_time || '08:30'}`;
+    if (document.getElementById('badge-dates')) {
+        document.getElementById('badge-dates').innerHTML = `С ${issueDate.toLocaleDateString('ru-RU')}<br>ПО ${expiryDate.toLocaleDateString('ru-RU')}`;
+    }
 
     const catTitle = document.getElementById('badge-category-title');
     const catSub = document.getElementById('badge-category-sub');
-    if (card.category === 'B') {
-        catTitle.innerText = 'B';
-        catTitle.className = 'font-black text-xl text-amber-600 block';
-        catSub.innerText = 'ВРЕМЕННЫЙ';
-    } else if (card.category === 'C') {
-        catTitle.innerText = 'C';
-        catTitle.className = 'font-black text-xl text-blue-600 block';
-        catSub.innerText = 'РАЗОВЫЙ';
-    } else {
-        catTitle.innerText = 'A';
-        catTitle.className = 'font-black text-xl text-emerald-700 block';
-        catSub.innerText = 'ПОСТОЯННЫЙ';
+
+    if (catTitle && catSub) {
+        if (card.category === 'B') {
+            catTitle.innerText = 'B';
+            catTitle.className = 'font-black text-3xl text-amber-600 block my-0.5';
+            catSub.innerText = 'ВРЕМЕННЫЙ';
+        } else if (card.category === 'C') {
+            catTitle.innerText = 'C';
+            catTitle.className = 'font-black text-3xl text-blue-600 block my-0.5';
+            catSub.innerText = 'РАЗОВЫЙ';
+        } else {
+            catTitle.innerText = 'A';
+            catTitle.className = 'font-black text-3xl text-emerald-800 block my-0.5';
+            catSub.innerText = 'ПОСТОЯННЫЙ';
+        }
     }
 
-    const rawDate = (card.issue_date || '').replace(/-/g, '');
-    document.getElementById('badge-barcode').innerText = `${badgeNum}-${rawDate}`;
-
     const photoElem = document.getElementById('badge-photo');
-    photoElem.src = res.photo_user || 'https://via.placeholder.com/200x260?text=НЕТ+ФОТО';
+    if (photoElem) {
+        photoElem.src = res.photo_user || `https://ui-avatars.com/api/?name=${encodeURIComponent(card.full_name || 'K')}&background=000&color=fff&size=200`;
+    }
 
-    document.getElementById('badge-modal').classList.remove('hidden');
+    document.getElementById('badge-modal')?.classList.remove('hidden');
 }
 
 function closeBadgeModal() {
-    document.getElementById('badge-modal').classList.add('hidden');
+    document.getElementById('badge-modal')?.classList.add('hidden');
 }
 
 // ------------------------------------------------------------------
-// 4. ЗАГРУЗКА И УДАЛЕНИЕ ВОПРОСОВ
+// 5. УПРАВЛЕНИЕ ВОПРОСАМИ
 // ------------------------------------------------------------------
 async function loadQuestionsList() {
     try {
@@ -363,19 +359,24 @@ async function loadQuestionsList() {
         if (!tbody) return;
         tbody.innerHTML = '';
 
+        if (questions.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Вопросы пока не добавлены</td></tr>`;
+            return;
+        }
+
         questions.forEach(q => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50";
 
             tr.innerHTML = `
                 <td class="p-2.5 border-r border-slate-200 font-mono text-[11px] text-slate-500">${q.id}</td>
-                <td class="p-2.5 border-r border-slate-200 font-bold text-kpp-navy">${positionNames[q.category] || q.category}</td>
+                <td class="p-2.5 border-r border-slate-200 font-bold text-slate-900">${positionNames[q.category] || q.category}</td>
                 <td class="p-2.5 border-r border-slate-200">
                     <div class="font-bold text-slate-800 mb-0.5">${q.text_ru}</div>
                     <div class="text-slate-500 italic text-[11px]">${q.text_kk}</div>
                 </td>
                 <td class="p-2.5 border-r border-slate-200 text-slate-600">
-                    ${q.options_ru.join(', ')}
+                    ${Array.isArray(q.options_ru) ? q.options_ru.join(', ') : q.options_ru}
                 </td>
                 <td class="p-2.5 border-r border-slate-200 text-center font-bold text-emerald-700">
                     Индекс: ${q.correct_option_index}
@@ -409,9 +410,6 @@ async function deleteQuestion(id) {
     }
 }
 
-// ------------------------------------------------------------------
-// 5. СОХРАНЕНИЕ НОВОГО ВОПРОСА
-// ------------------------------------------------------------------
 async function submitQuestion(e) {
     e.preventDefault();
 
@@ -456,7 +454,9 @@ async function submitQuestion(e) {
     }
 }
 
-// Инициализация при загрузке страницы админки
+// ------------------------------------------------------------------
+// 6. ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+// ------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
     adminToken = localStorage.getItem('adminToken') || '';
     if (adminToken) {

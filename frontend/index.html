@@ -8,33 +8,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Open Sans', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Open Sans', 'sans-serif'] },
                     colors: {
                         kpp: {
                             navy: '#0F1E36',
-                            navyHover: '#16263D',
                             red: '#C8102E',
                             redHover: '#A80C25',
                             bg: '#F4F6F9',
-                            card: '#FFFFFF',
-                            border: '#CBD5E1',
-                            text: '#1E293B',
+                            border: '#E2E8F0',
                             muted: '#64748B'
                         }
-                    },
-                    borderRadius: {
-                        DEFAULT: '4px',
-                        'sm': '2px',
-                        'md': '4px',
-                        'lg': '6px',
                     }
                 }
             }
@@ -42,228 +31,235 @@
     </script>
 
     <style>
-        body {
-            font-family: 'Open Sans', sans-serif;
-            color: #1E293B;
-            background-color: #F4F6F9;
-        }
-
-        .kpp-input {
-            background-color: #FFFFFF;
-            border: 1px solid #CBD5E1;
-            border-radius: 4px;
-            color: #0F1E36;
-            font-size: 13px;
-            transition: border-color 0.15s ease-in-out;
-        }
-
-        .kpp-input:focus {
-            border-color: #0F1E36;
-            outline: none;
-        }
-
-        /* Выбор радиокнопки в стиле KPP */
-        .custom-radio:checked + label {
-            border-color: #C8102E;
-            background-color: #FFF5F5;
-        }
-
-        .custom-radio:checked + label .dot-outer {
-            border-color: #C8102E;
-        }
-
-        .custom-radio:checked + label .dot-inner {
-            background-color: #C8102E;
-            transform: scale(1);
-        }
+        body { font-family: 'Open Sans', sans-serif; background-color: #F4F6F9; color: #1E293B; }
+        .kpp-input { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; color: #0F1E36; font-size: 13px; font-weight: 600; }
+        .kpp-input:focus { border-color: #0F1E36; background-color: #FFFFFF; outline: none; }
+        .custom-radio:checked + label { border-color: #C8102E; background-color: #FFF5F5; }
+        .custom-radio:checked + label .dot-outer { border-color: #C8102E; }
+        .custom-radio:checked + label .dot-inner { background-color: #C8102E; transform: scale(1); }
     </style>
 </head>
-<body class="min-h-full bg-kpp-bg antialiased text-xs sm:text-sm">
+<body class="min-h-full bg-[#F4F6F9] antialiased text-xs sm:text-sm">
 
-    <!-- ВЕРХНЯЯ КОРПОРАТИВНАЯ ПАНЕЛЬ KPP -->
-    <div class="bg-kpp-navy text-white border-b border-slate-800">
-        <div class="max-w-[1140px] mx-auto px-4 py-2 flex justify-between items-center text-[11px] font-medium text-slate-300">
-            <span>Официальный портал ТОО «Казфосфат»</span>
-            <div class="flex items-center space-x-6">
-                <span>Департамент промышленной безопасности</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="max-w-[1140px] mx-auto py-6 px-4 space-y-6">
+    <div class="max-w-[1200px] mx-auto py-6 px-4 space-y-6">
         
-        <!-- ШАПКА МОДУЛЯ (Корпоративный блок KPP) -->
-        <header class="bg-white border border-kpp-border rounded-md p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="flex items-center space-x-4">
-                <div class="w-12 h-12 bg-white border border-kpp-border rounded p-1 flex items-center justify-center shrink-0">
-                    <img src="images/logo.png" alt="Казфосфат" class="w-full h-full object-contain">
-                </div>
-                <div>
-                    <h1 class="text-base sm:text-lg font-bold text-kpp-navy uppercase tracking-wide">
-                        ТОО «КАЗФОСФАТ»
-                    </h1>
-                    <p id="sub-header" class="text-xs text-kpp-muted mt-0.5">
-                        Система тестирования персонала и оценки производственных допусков
-                    </p>
-                </div>
+        <!-- ХЕДЕР С ЛОГОТИПОМ И ОБНОВЛЕННЫМ СТЕППЕРОМ (3 ШАГА) -->
+        <header class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <img src="images/logo.png" alt="Казфосфат" class="h-10 object-contain">
+                <span class="font-black text-xl text-[#0F1E36] tracking-widest uppercase">KAZPHOSPHATE</span>
             </div>
 
-            <!-- Селектор языка -->
-            <div class="flex border border-kpp-border rounded bg-slate-50 p-0.5">
-                <button onclick="setLanguage('ru')" id="btn-ru" class="px-4 py-1.5 text-xs font-bold rounded-sm bg-kpp-navy text-white transition-all">
-                    РУС
-                </button>
-                <button onclick="setLanguage('kk')" id="btn-kk" class="px-4 py-1.5 text-xs font-bold rounded-sm text-kpp-muted hover:text-kpp-navy transition-all">
-                    ҚАЗ
-                </button>
+            <!-- ИНДИКАТОР ШАГОВ (БЕЗ ШАГА "ДОКУМЕНТЫ") -->
+            <div class="flex items-center space-x-6 text-xs font-bold">
+                <div class="flex items-center space-x-2 text-kpp-red">
+                    <span class="w-7 h-7 rounded-full bg-kpp-red text-white flex items-center justify-center font-bold">01</span>
+                    <span class="hidden sm:inline">Данные сотрудника</span>
+                </div>
+                <div class="w-12 h-[2px] bg-slate-200"></div>
+                <div class="flex items-center space-x-2 text-slate-400">
+                    <span class="w-7 h-7 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold">02</span>
+                    <span class="hidden sm:inline">Тестирование</span>
+                </div>
+                <div class="w-12 h-[2px] bg-slate-200"></div>
+                <div class="flex items-center space-x-2 text-slate-400">
+                    <span class="w-7 h-7 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold">03</span>
+                    <span class="hidden sm:inline">Результат</span>
+                </div>
             </div>
         </header>
 
-        <!-- ИНСТРУКТАЖ (Строгая ведомственная панель) -->
-        <section id="video-instruction-block" class="bg-white border border-kpp-border rounded-md p-5">
+        <!-- ИНСТРУКТАЖ С ВИДЕО -->
+        <section id="video-instruction-block" class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                
-                <div class="md:col-span-4 aspect-video bg-slate-800 rounded border border-kpp-border relative overflow-hidden">
-                    <video src="vid.mp4" controls class="absolute inset-0 w-full h-full object-cover"></video>
-                    <span class="absolute bottom-2 left-2 text-[10px] font-medium text-white bg-black/70 px-2 py-0.5 rounded">Инструктаж (0:45)</span>
+                <div class="md:col-span-5 aspect-video bg-slate-900 rounded-lg overflow-hidden relative shadow-md">
+                    <video src="vid.mp4" controls class="w-full h-full object-cover"></video>
                 </div>
 
-                <div class="md:col-span-8 space-y-2">
-                    <div class="inline-block text-[10px] font-bold text-kpp-red uppercase tracking-wider">
-                        Инструктаж по тестированию персонала
-                    </div>
-                    <h3 id="vid-title" class="text-sm sm:text-base font-bold text-kpp-navy">
-                        Цель и порядок проведения тестирования
-                    </h3>
-                    <p id="vid-desc" class="text-xs text-kpp-muted leading-relaxed">
+                <div class="md:col-span-7 space-y-2">
+                    <span class="text-[11px] font-extrabold text-kpp-red uppercase tracking-wider block">ИНСТРУКТАЖ ПО ТЕСТИРОВАНИЮ ПЕРСОНАЛА</span>
+                    <h3 class="text-base font-extrabold text-slate-900">Цель и порядок проведения тестирования</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-medium">
                         Настоящая проверка предназначена для подтверждения уровня профессиональной подготовки, допусков к работе на объектах повышенной опасности и знаний требований охраны труда ТОО «Казфосфат».
                     </p>
                 </div>
-
             </div>
         </section>
 
-        <!-- ФОРМА РЕГИСТРАЦИИ И ТЕСТА -->
-        <main class="bg-white border border-kpp-border rounded-md p-6">
-            
+        <!-- ОСНОВНАЯ ФОРМА -->
+        <main class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <form id="quiz-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
                 
-                <!-- ЭТАП 1: Данные -->
+                <!-- РАЗДЕЛ 1. ДАННЫЕ СОТРУДНИКА -->
                 <div id="step-1" class="space-y-6">
-                    <div class="border-b border-kpp-border pb-3 flex justify-between items-center">
-                        <h2 id="sec1-title" class="text-sm sm:text-base font-bold text-kpp-navy uppercase">
-                            Раздел 1. Данные сотрудника
-                        </h2>
-                        <span class="text-xs font-semibold text-kpp-muted">Этап 1 из 2</span>
+                    <div class="flex items-center space-x-3 border-b border-slate-200 pb-3">
+                        <span class="w-7 h-7 rounded-full bg-kpp-red text-white flex items-center justify-center font-bold text-xs">👤</span>
+                        <h2 id="sec1-title" class="text-sm font-extrabold text-slate-900 uppercase">01. ДАННЫЕ СОТРУДНИКА</h2>
                     </div>
 
-                    <div class="space-y-4">
+                    <!-- СЕТКА ПОЛЕЙ ДАННЫХ (БЕЗ ПОЛЯ ИИН) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label id="lbl-fio" class="block text-xs font-semibold text-kpp-navy uppercase mb-1.5">1. Фамилия, имя, отчество (полностью)</label>
-                            <input type="text" id="full_name" required placeholder="Иванов Иван Иванович" class="w-full px-3 py-2.5 kpp-input">
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label id="lbl-iin" class="block text-xs font-semibold text-kpp-navy uppercase mb-1.5">2. ИИН сотрудника</label>
-                                <input type="text" id="iin" maxlength="12" required placeholder="12-значный номер" class="w-full px-3 py-2.5 kpp-input">
-                            </div>
-                            <div>
-                                <label id="lbl-phone" class="block text-xs font-semibold text-kpp-navy uppercase mb-1.5">3. Контактный телефон</label>
-                                <input type="tel" id="phone" required placeholder="+7 (7XX) XXX-XX-XX" class="w-full px-3 py-2.5 kpp-input">
+                            <label id="lbl-fio" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">ФАМИЛИЯ, ИМЯ, ОТЧЕСТВО (ПОЛНОСТЬЮ)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-400">👤</span>
+                                <input type="text" id="full_name" required placeholder="ФИО Сотрудника" class="w-full pl-9 pr-3 py-2 kpp-input">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label id="lbl-birth" class="block text-xs font-semibold text-kpp-navy uppercase mb-1.5">4. Дата рождения</label>
-                                <input type="date" id="birth_date" required class="w-full px-3 py-2.5 kpp-input">
-                            </div>
-                            <div>
-                                <label id="lbl-citizenship" class="block text-xs font-semibold text-kpp-navy uppercase mb-1.5">5. Гражданство</label>
-                                <input type="text" id="citizenship" required placeholder="Республика Казахстан" class="w-full px-3 py-2.5 kpp-input">
-                            </div>
-                            <div>
-                                <label id="lbl-pos" class="block text-xs font-semibold text-kpp-navy uppercase mb-1.5">6. Специальность / Должность</label>
-                                <select id="position" required class="w-full px-3 py-2.5 kpp-input">
-    <!-- Водители -->
-    <option value="dumper">Водитель карьерного самосвала / Карьерлік самосвал жүргізушісі</option>
-    <option value="car_driver">Водитель легкового автомобиля / Жеңіл автомобиль жүргізушісі</option>
-    <option value="truck_driver">Водитель грузового автомобиля / Жүк автомобиль жүргізушісі</option>
-    <option value="bus_driver">Водитель автобуса / Автобус жүргізушісі</option>
-    <option value="trailer_driver">Водитель автомобиля с прицепом / Тіркемесі бар автомобиль жүргізушісі</option>
-    <option value="fuel_driver">Водитель топливозаправщика / Жанармай құю көлігі жүргізушісі</option>
-    <option value="dopog_driver">Водитель ТС для перевозки опасных грузов (ДОПОГ) / Қауіпті жүктерді тасымалдайтын көлік жүргізушісі</option>
-
-    <!-- Машинисты и Операторы -->
-    <option value="excavator">Машинист экскаватора / Экскаватор машинисі</option>
-    <option value="loader">Машинист фронтального погрузчика / Алдыңғы тиегіш машинисі</option>
-    <option value="bulldozer">Машинист бульдозера / Бульдозер машинисі</option>
-    <option value="grader">Машинист автогрейдера / Автогрейдер машинисі</option>
-    <option value="roller">Машинист дорожного катка / Жол катогының машинисі</option>
-    <option value="telehandler">Машинист телескопического погрузчика / Телескопиялық тиегіш машинисі</option>
-    <option value="drilling_rig">Машинист буровой установки / Бұрғылау қондырғысының машинисі</option>
-    <option value="operator">Оператор технологического оборудования / Технологиялық жабдық операторы</option>
-
-    <!-- Слесари и Руководители -->
-    <option value="auto_mechanic">Слесарь по ремонту автомобилей / Автомобиль жөндеу слесарі</option>
-    <option value="machinery_mechanic">Слесарь по ремонту самоходной техники / Өздігінен жүретін техниканы жөндеу слесарі</option>
-    <option value="mechanic">Механик участка / Учаске механигі</option>
-    <option value="foreman">Мастер участка / Учаске шебері</option>
-    <option value="other">Другая должность / Басқа лауазым</option>
-</select>
+                        <div>
+                            <label id="lbl-phone" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">КОНТАКТНЫЙ ТЕЛЕФОН</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-400">📞</span>
+                                <input type="tel" id="phone" required placeholder="Контактный телефон" class="w-full pl-9 pr-3 py-2 kpp-input">
                             </div>
                         </div>
 
-                        <!-- ЗАГРУЗКА ДОКУМЕНТОВ -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                            <div class="border border-kpp-border rounded p-4 text-center bg-slate-50 hover:bg-white transition-all relative">
-                                <input type="file" id="photo_user" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                                <span class="text-xl mb-1 block text-slate-600">📷</span>
-                                <p id="lbl-photo-user" class="text-xs font-semibold text-kpp-navy">Фото работника (3×4)</p>
-                                <p class="text-[10px] text-kpp-muted mt-1">Прикрепить файл</p>
+                        <div>
+                            <label id="lbl-birth" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">ДАТА РОЖДЕНИЯ</label>
+                            <div class="relative">
+                                <input type="date" id="birth_date" required class="w-full px-3 py-2 kpp-input">
                             </div>
+                        </div>
 
-                            <div class="border border-kpp-border rounded p-4 text-center bg-slate-50 hover:bg-white transition-all relative">
-                                <input type="file" id="photo_license" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                                <span class="text-xl mb-1 block text-slate-600">🪪</span>
-                                <p id="lbl-photo-lic" class="text-xs font-semibold text-kpp-navy">Водительские права</p>
-                                <p class="text-[10px] text-kpp-muted mt-1">Прикрепить файл</p>
+                        <div>
+                            <label id="lbl-citizenship" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">ГРАЖДАНСТВО</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-400">🏳</span>
+                                <input type="text" id="citizenship" required placeholder="Казахстан" class="w-full pl-9 pr-3 py-2 kpp-input">
                             </div>
+                        </div>
 
-                            <div class="border border-kpp-border rounded p-4 text-center bg-slate-50 hover:bg-white transition-all relative">
-                                <input type="file" id="photo_id_card" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                                <span class="text-xl mb-1 block text-slate-600">📄</span>
-                                <p id="lbl-photo-id" class="text-xs font-semibold text-kpp-navy">Уд. личности / Паспорт</p>
-                                <p class="text-[10px] text-kpp-muted mt-1">Прикрепить файл</p>
+                        <div class="md:col-span-2">
+                            <label id="lbl-pos" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">СПЕЦИАЛЬНОСТЬ / ДОЛЖНОСТЬ</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-400">💼</span>
+                                <select id="position" required class="w-full pl-9 pr-3 py-2 kpp-input">
+                                    <option value="dumper">Водитель карьерного самосвала</option>
+                                    <option value="car_driver">Водитель легкового автомобиля</option>
+                                    <option value="truck_driver">Водитель грузового автомобиля</option>
+                                    <option value="bus_driver">Водитель автобуса</option>
+                                    <option value="trailer_driver">Водитель автомобиля с прицепом</option>
+                                    <option value="fuel_driver">Водитель топливозаправщика</option>
+                                    <option value="dopog_driver">Водитель (ДОПОГ)</option>
+                                    <option value="excavator">Машинист экскаватора</option>
+                                    <option value="loader">Машинист фронтального погрузчика</option>
+                                    <option value="bulldozer">Машинист бульдозера</option>
+                                    <option value="grader">Машинист автогрейдера</option>
+                                    <option value="roller">Машинист дорожного катка</option>
+                                    <option value="telehandler">Машинист телескопического погрузчика</option>
+                                    <option value="drilling_rig">Машинист буровой установки</option>
+                                    <option value="operator">Оператор технологического оборудования</option>
+                                    <option value="auto_mechanic">Слесарь по ремонту автомобилей</option>
+                                    <option value="machinery_mechanic">Слесарь по ремонту самоходной техники</option>
+                                    <option value="mechanic">Механик участка</option>
+                                    <option value="foreman">Мастер участка</option>
+                                    <option value="other">Другая должность</option>
+                                </select>
                             </div>
                         </div>
                     </div>
 
-                    <div class="pt-4 border-t border-kpp-border">
-                        <button type="button" onclick="goToStep2()" id="btn-next" class="w-full sm:w-auto px-6 py-2.5 bg-kpp-red hover:bg-kpp-redHover text-white font-bold rounded text-xs uppercase tracking-wider transition-colors">
-                            Перейти к тестированию →
+                    <!-- ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ И УДОСТОВЕРЕНИЕ МАШИНИСТА -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        
+                        <!-- ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ -->
+                        <div class="border border-blue-200 bg-blue-50/40 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div class="space-y-2 w-full sm:w-auto">
+                                <div class="flex items-center space-x-2 text-blue-900 font-bold text-xs uppercase">
+                                    <span class="p-1.5 bg-blue-600 text-white rounded-md text-xs">🪪</span>
+                                    <span>ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase block">КАТЕГОРИИ</span>
+                                    <input type="text" placeholder="B, C, CE" class="px-3 py-1 kpp-input w-full sm:w-36 text-xs mt-1">
+                                </div>
+                            </div>
+
+                            <div class="border-2 border-dashed border-blue-300 rounded-lg p-3 text-center bg-white relative hover:bg-blue-50 transition cursor-pointer w-full sm:w-48 shrink-0">
+                                <input type="file" id="photo_license" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                                <span class="text-blue-600 text-lg block">☁</span>
+                                <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан права</span>
+                                <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
+                            </div>
+                        </div>
+
+                        <!-- УДОСТОВЕРЕНИЕ МАШИНИСТА (ВОЗВРАЩЕНО) -->
+                        <div class="border border-red-200 bg-red-50/40 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div class="space-y-2 w-full sm:w-auto">
+                                <div class="flex items-center space-x-2 text-red-900 font-bold text-xs uppercase">
+                                    <span class="p-1.5 bg-red-600 text-white rounded-md text-xs">🚜</span>
+                                    <span>УДОСТОВЕРЕНИЕ МАШИНИСТА</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <div>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase block">КАТЕГОРИЯ</span>
+                                        <input type="text" placeholder="Машинист экскаватора" class="px-2 py-1 kpp-input w-32 text-[11px] mt-1">
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase block">НОМЕР</span>
+                                        <input type="text" placeholder="Категория E" class="px-2 py-1 kpp-input w-24 text-[11px] mt-1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-2 border-dashed border-red-300 rounded-lg p-3 text-center bg-white relative hover:bg-red-50 transition cursor-pointer w-full sm:w-48 shrink-0">
+                                <input type="file" id="photo_id_card" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                                <span class="text-red-600 text-lg block">☁</span>
+                                <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан удостоверения</span>
+                                <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- БЛОК ЗАГРУЗКИ ФОТО -->
+                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div class="flex items-start space-x-3">
+                            <span class="p-2.5 bg-slate-200 rounded-lg text-slate-700 text-lg">📷</span>
+                            <div>
+                                <span class="font-bold text-slate-900 text-xs block uppercase">ФОТО СОТРУДНИКА (3x4)</span>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    Сфотографируйтесь или загрузите фото из галереи — анфас, без головного убора, при хорошем освещении.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="relative shrink-0 w-full md:w-auto">
+                            <input type="file" id="photo_user" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                            <button type="button" class="w-full md:w-auto px-4 py-2.5 bg-white border border-slate-300 rounded-lg font-bold text-xs text-slate-700 shadow-sm flex items-center justify-center space-x-2">
+                                <span>📁</span>
+                                <span>Загрузить фото из галереи</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- КНОПКА ПЕРЕХОДА -->
+                    <div class="flex justify-between items-center pt-4 border-t border-slate-200">
+                        <button type="button" onclick="goToStep2()" id="btn-next" class="px-8 py-3 bg-kpp-red hover:bg-kpp-redHover text-white font-extrabold rounded-lg text-xs uppercase tracking-wider shadow-md transition">
+                            ПЕРЕЙТИ К ТЕСТИРОВАНИЮ →
                         </button>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Этап 1 из 2</span>
                     </div>
                 </div>
 
-                <!-- ЭТАП 2: Вопросы -->
+                <!-- РАЗДЕЛ 2. ВОПРОСЫ ТЕСТА -->
                 <div id="step-2" class="hidden space-y-6">
-                    <div class="border-b border-kpp-border pb-3 flex justify-between items-center">
-                        <h2 id="sec2-title" class="text-sm sm:text-base font-bold text-kpp-navy uppercase">
-                            Раздел 2. Проверка профессиональных знаний
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                        <h2 id="sec2-title" class="text-sm font-extrabold text-slate-900 uppercase">
+                            02. ПРОВЕРКА ПРОФЕССИОНАЛЬНЫХ ЗНАНИЙ
                         </h2>
-                        <span class="text-xs font-semibold text-kpp-muted">Этап 2 из 2</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Этап 2 из 2</span>
                     </div>
 
                     <div id="questions-container" class="space-y-4"></div>
 
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-kpp-border">
-                        <button type="button" onclick="goToStep1()" id="btn-back" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-xs uppercase tracking-wider transition">
-                            ← Назад
+                    <div class="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t border-slate-200">
+                        <button type="button" onclick="goToStep1()" id="btn-back" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs uppercase tracking-wider transition">
+                            ← НАЗАД
                         </button>
-                        <button type="submit" id="btn-submit" class="px-6 py-2.5 bg-kpp-red hover:bg-kpp-redHover text-white font-bold rounded text-xs uppercase tracking-wider transition">
-                            Подтвердить и отправить результаты
+                        <button type="submit" id="btn-submit" class="px-8 py-2.5 bg-kpp-red hover:bg-kpp-redHover text-white font-extrabold rounded-lg text-xs uppercase tracking-wider shadow-md transition">
+                            ПОДТВЕРДИТЬ И ОТПРАВИТЬ РЕЗУЛЬТАТЫ
                         </button>
                     </div>
                 </div>
@@ -271,31 +267,29 @@
             </form>
 
             <!-- ЭКРАН РЕЗУЛЬТАТА -->
-            <div id="result-screen" class="hidden py-6 px-2 space-y-6">
-                <div class="text-center space-y-3">
-                    <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto border border-emerald-300">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    </div>
-
-                    <div class="space-y-1 max-w-md mx-auto">
-                        <h2 id="res-title" class="text-lg font-bold text-kpp-navy">Тестирования успешно пройдена</h2>
-                        <p id="res-desc" class="text-xs text-kpp-muted">Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».</p>
-                    </div>
-
-                    <div class="max-w-xs mx-auto p-4 bg-slate-50 border border-kpp-border rounded">
-                        <p id="res-score-label" class="text-[10px] font-bold text-kpp-muted uppercase mb-1">Итоговый балл</p>
-                        <div id="score-box" class="text-3xl font-bold text-kpp-navy">0 / 0</div>
-                    </div>
+            <div id="result-screen" class="hidden py-8 px-2 space-y-6 text-center">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-400">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                 </div>
 
-                <div class="space-y-3 pt-4 border-t border-kpp-border text-left">
-                    <h3 id="res-details-title" class="text-xs font-bold text-kpp-navy uppercase tracking-wide">
-                        Подробный разбор ответов:
-                    </h3>                    <div id="questions-error" class="hidden px-4 py-3 rounded border border-red-200 bg-red-50 text-red-700 text-xs"></div>                    <div id="results-details-container" class="space-y-3"></div>
+                <div class="space-y-1 max-w-md mx-auto">
+                    <h2 id="res-title" class="text-xl font-extrabold text-slate-900">Тестирование успешно пройдено</h2>
+                    <p id="res-desc" class="text-xs text-slate-500">Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».</p>
                 </div>
 
-                <div class="text-center pt-4">
-                    <button onclick="window.location.reload()" id="btn-restart" class="inline-block px-6 py-2.5 bg-kpp-navy hover:bg-kpp-navyHover text-white font-bold rounded text-xs uppercase tracking-wider transition">
+                <div class="max-w-xs mx-auto p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <p id="res-score-label" class="text-[10px] font-bold text-slate-400 uppercase mb-1">Итоговый балл</p>
+                    <div id="score-box" class="text-4xl font-black text-slate-900">0 / 0</div>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-slate-200 text-left">
+                    <h3 id="res-details-title" class="text-xs font-bold text-slate-900 uppercase tracking-wide">Подробный разбор ответов:</h3>
+                    <div id="questions-error" class="hidden px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs"></div>
+                    <div id="results-details-container" class="space-y-3"></div>
+                </div>
+
+                <div class="pt-4">
+                    <button onclick="window.location.reload()" id="btn-restart" class="px-8 py-3 bg-[#0F1E36] hover:bg-slate-800 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition">
                         Завершить сессию
                     </button>
                 </div>
@@ -303,11 +297,11 @@
 
         </main>
 
-        <footer class="text-center text-[11px] text-kpp-muted pt-2 border-t border-kpp-border">
+        <footer class="text-center text-[11px] text-slate-400 pt-2 border-t border-slate-200">
             © 2026 ТОО «Казфосфат». Все права защищены.
         </footer>
     </div>
 
-    <script src="js/app.js?v=2"></script>
+    <script src="js/app.js?v=5"></script>
 </body>
 </html>
