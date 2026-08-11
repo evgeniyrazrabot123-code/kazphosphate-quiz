@@ -105,6 +105,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ БАЗЫ ВОПРОСОВ
+@app.on_event("startup")
+def startup_event():
+    try:
+        db = next(get_db())
+        if seed_questions and db.query(models.Question).count() == 0:
+            seed_questions(db)
+    except Exception as e:
+        print(f"Ошибка при заполнении начальных данных: {e}")
+
 # Подключение статических файлов (Загрузки и Фронтенд)
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
@@ -138,7 +148,7 @@ def safe_json_loads(val):
         return []
 
 # =====================================================================
-# РАЗДАЧА HTML СТРАНИЦ
+# РАЗДАЧА HTML СТРАНИЦ И МЕДИА
 # =====================================================================
 @app.get("/")
 async def serve_index():
@@ -160,6 +170,7 @@ async def serve_video():
     if not video_path.exists():
         raise HTTPException(status_code=404, detail="Видеофайл не найден")
     return FileResponse(video_path, media_type="video/mp4")
+
 # =====================================================================
 # API: ПОЛЬЗОВАТЕЛЬСКАЯ ЧАСТЬ
 # =====================================================================
@@ -310,10 +321,27 @@ def get_results_admin(request: Request, db: Session = Depends(get_db), admin_aut
 def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
     res = db.query(models.TestResult).filter(models.TestResult.id == r_id).first()
     if not res:
-        return {"status": "error", "message": "Результат не найден"}
+        raise HTTPException(status_code=404, detail="Результат не найден")
+    
+    emp_id = res.employee_id
+    
+    # Каскадное удаление: сначала удаляем сам результат
     db.delete(res)
     db.commit()
-    return {"status": "success"}
+
+    # Затем удаляем связанные с ним данные сотрудника и пропуск
+    if emp_id:
+        emp = db.query(models.Employee).filter(models.Employee.id == emp_id).first()
+        if emp:
+            db.delete(emp)
+        
+        pass_card = db.query(models.PassCard).filter(models.PassCard.id == emp_id).first()
+        if pass_card:
+            db.delete(pass_card)
+            
+        db.commit()
+
+    return {"status": "success", "message": "Запись успешно удалена"}
 
 @app.get("/api/admin/results/export/csv")
 def export_results_csv(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):

@@ -1,5 +1,6 @@
 let currentLang = 'ru';
 let loadedQuestions = [];
+let isSubmitting = false; // Блокировка от повторных кликов и дублей
 
 // Все 20 специальностей ТОО «Казфосфат»
 const positionNames = {
@@ -64,12 +65,14 @@ const translations = {
     }
 };
 
-// Функция алгоритма Фишера-Йейтса для перемешивания
+// ЧИСТАЯ ФУНКЦИЯ ПЕРЕМЕШИВАНИЯ (Алгоритм Фишера-Йейтса)
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+        const temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
     }
     return arr;
 }
@@ -152,15 +155,10 @@ async function goToStep2() {
 
     const loaded = await loadQuestions();
 
-    document.getElementById('step-1').classList.add('hidden');
-    document.getElementById('step-2').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    if (!loaded) {
-        const errorContainer = document.getElementById('questions-error');
-        if (errorContainer) {
-            errorContainer.classList.remove('hidden');
-        }
+    if (loaded) {
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-2').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
@@ -170,7 +168,7 @@ function goToStep1() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 3. ОТРИСОВКА ВОПРОСОВ С РАНДОМИЗАЦИЕЙ ОТВЕТОВ
+// 3. ОТРИСОВКА И ПЕРЕМЕШИВАНИЕ ВОПРОСОВ И ОТВЕТОВ
 async function loadQuestions() {
     const category = document.getElementById('position').value;
     const container = document.getElementById('questions-container');
@@ -194,7 +192,7 @@ async function loadQuestions() {
             throw new Error('Вопросы не найдены');
         }
 
-        // Перемешиваем список вопросов
+        // 🔀 1. ПЕРЕМЕШИВАЕМ ПОРЯДОК САМИХ ВОПРОСОВ
         loadedQuestions = shuffleArray(rawQuestions);
 
         loadedQuestions.forEach((q, idx) => {
@@ -202,11 +200,12 @@ async function loadQuestions() {
             qBox.className = "question-card p-4 rounded border border-kpp-border bg-slate-50/50 space-y-3";
             qBox.setAttribute('data-id', q.id);
 
-            // Сохраняем исходные индексы вариантов и перемешиваем их
-            let indexedOptions = q.options.map((optText, originalIndex) => ({
+            // 🔀 2. ПРИВЯЗЫВАЕМ НАСТОЯЩИЙ ИНДЕКС К КАЖДОМУ ВАРИАНТУ И ПЕРЕМЕШИВАЕМ ВАРИАНТЫ
+            let indexedOptions = q.options.map((optText, origIndex) => ({
                 text: optText,
-                originalIndex: originalIndex
+                originalIndex: origIndex
             }));
+            
             indexedOptions = shuffleArray(indexedOptions);
 
             let optionsHtml = '';
@@ -249,12 +248,39 @@ async function loadQuestions() {
     }
 }
 
-// 4. ОТПРАВКА ФОРМЫ
+// 4. ОТПРАВКА ФОРМЫ (ЗАЩИЩЕНА ОТ ДУБЛИРОВАНИЯ)
 async function handleFormSubmit(e) {
-    if (e) e.preventDefault();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    if (isSubmitting) return; // Защита от дублирующего запроса
 
     const submitBtn = document.getElementById('btn-submit');
     const originalBtnText = submitBtn ? submitBtn.innerText : 'ОТПРАВИТЬ';
+
+    // Сбор всех выбранных ответов
+    const userAnswers = {};
+    const cards = document.querySelectorAll('.question-card');
+
+    cards.forEach(card => {
+        const qId = card.getAttribute('data-id');
+        const selected = card.querySelector(`input[name="q_${qId}"]:checked`);
+        if (selected) {
+            userAnswers[qId] = parseInt(selected.value, 10);
+        }
+    });
+
+    if (Object.keys(userAnswers).length < cards.length) {
+        alert(currentLang === 'ru' 
+            ? "Пожалуйста, ответьте на все вопросы перед отправкой!" 
+            : "Өтініш, барлық сұрақтарға жауап беріңіз!");
+        return;
+    }
+
+    // Блокируем форму
+    isSubmitting = true;
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerText = translations[currentLang]?.sendingText || 'Отправка...';
@@ -277,29 +303,6 @@ async function handleFormSubmit(e) {
 
         const idCardPhoto = document.getElementById('photo_id_card')?.files[0];
         if (idCardPhoto) formData.append('photo_id_card', idCardPhoto);
-
-        // Сбор ответов пользователя
-        const userAnswers = {};
-        const cards = document.querySelectorAll('.question-card');
-
-        cards.forEach(card => {
-            const qId = card.getAttribute('data-id');
-            const selected = card.querySelector(`input[name="q_${qId}"]:checked`);
-            if (selected) {
-                userAnswers[qId] = parseInt(selected.value, 10);
-            }
-        });
-
-        if (Object.keys(userAnswers).length < cards.length) {
-            alert(currentLang === 'ru' 
-                ? "Пожалуйста, ответьте на все вопросы перед отправкой!" 
-                : "Өтініш, барлық сұрақтарға жауап беріңіз!");
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerText = originalBtnText;
-            }
-            return;
-        }
 
         formData.append('answers', JSON.stringify(userAnswers));
 
@@ -366,6 +369,8 @@ async function handleFormSubmit(e) {
     } catch (err) {
         console.error("Ошибка при отправке:", err);
         alert('Не удалось отправить анкету. Проверьте соединение с сервером.');
+    } finally {
+        isSubmitting = false; // Разблокировка
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerText = originalBtnText;
@@ -373,12 +378,13 @@ async function handleFormSubmit(e) {
     }
 }
 
-// 5. ИНИЦИАЛИЗАЦИЯ И ПРИВЯЗКА СОБЫТИЙ
+// 5. ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ
 document.addEventListener('DOMContentLoaded', () => {
     const quizForm = document.getElementById('quiz-form');
     const nextButton = document.getElementById('btn-next');
 
     if (quizForm) {
+        quizForm.removeEventListener('submit', handleFormSubmit); // Сбрасываем старые обработчики
         quizForm.addEventListener('submit', handleFormSubmit);
     }
 
