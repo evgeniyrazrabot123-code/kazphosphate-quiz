@@ -64,6 +64,16 @@ const translations = {
     }
 };
 
+// Функция алгоритма Фишера-Йейтса для перемешивания
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 // 1. МУЛЬТИЯЗЫЧНОСТЬ
 function setLanguage(lang) {
     currentLang = lang;
@@ -160,7 +170,7 @@ function goToStep1() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 3. ОТРИСОВКА ВОПРОСОВ
+// 3. ОТРИСОВКА ВОПРОСОВ С РАНДОМИЗАЦИЕЙ ОТВЕТОВ
 async function loadQuestions() {
     const category = document.getElementById('position').value;
     const container = document.getElementById('questions-container');
@@ -178,28 +188,38 @@ async function loadQuestions() {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        loadedQuestions = await response.json();
+        const rawQuestions = await response.json();
 
-        if (!Array.isArray(loadedQuestions) || loadedQuestions.length === 0) {
+        if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
             throw new Error('Вопросы не найдены');
         }
+
+        // Перемешиваем список вопросов
+        loadedQuestions = shuffleArray(rawQuestions);
 
         loadedQuestions.forEach((q, idx) => {
             const qBox = document.createElement('div');
             qBox.className = "question-card p-4 rounded border border-kpp-border bg-slate-50/50 space-y-3";
             qBox.setAttribute('data-id', q.id);
 
+            // Сохраняем исходные индексы вариантов и перемешиваем их
+            let indexedOptions = q.options.map((optText, originalIndex) => ({
+                text: optText,
+                originalIndex: originalIndex
+            }));
+            indexedOptions = shuffleArray(indexedOptions);
+
             let optionsHtml = '';
-            q.options.forEach((opt, oIdx) => {
-                const radioId = `q_${q.id}_opt_${oIdx}`;
+            indexedOptions.forEach((optObj) => {
+                const radioId = `q_${q.id}_opt_${optObj.originalIndex}`;
                 optionsHtml += `
                     <div>
-                        <input type="radio" id="${radioId}" name="q_${q.id}" value="${oIdx}" class="hidden custom-radio">
+                        <input type="radio" id="${radioId}" name="q_${q.id}" value="${optObj.originalIndex}" class="hidden custom-radio">
                         <label for="${radioId}" class="flex items-center p-3 border border-kpp-border rounded cursor-pointer hover:bg-white transition-all bg-white text-xs">
                             <span class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center mr-3 shrink-0 dot-outer">
                                 <span class="w-2 h-2 rounded-full dot-inner scale-0 transition-transform"></span>
                             </span>
-                            <span class="font-medium text-slate-800">${opt}</span>
+                            <span class="font-medium text-slate-800">${optObj.text}</span>
                         </label>
                     </div>
                 `;
@@ -258,7 +278,7 @@ async function handleFormSubmit(e) {
         const idCardPhoto = document.getElementById('photo_id_card')?.files[0];
         if (idCardPhoto) formData.append('photo_id_card', idCardPhoto);
 
-        // Гарантированный сбор ответов по каждой карточке
+        // Сбор ответов пользователя
         const userAnswers = {};
         const cards = document.querySelectorAll('.question-card');
 
@@ -283,7 +303,6 @@ async function handleFormSubmit(e) {
 
         formData.append('answers', JSON.stringify(userAnswers));
 
-        // ✅ ИСПРАВЛЕНИЕ: правильный адрес /api/submit
         const response = await fetch('/api/submit', {
             method: 'POST',
             body: formData
