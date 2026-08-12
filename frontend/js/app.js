@@ -2,8 +2,8 @@ let currentLang = 'ru';
 let loadedQuestions = [];
 let isSubmitting = false; // Блокировка от повторных кликов и дублей
 
-// Все специальности ТОО «Казфосфат»
-const positionNames = {
+// Дефолтные специальности ТОО «Казфосфат»
+const DEFAULT_SPECIALTIES = {
     'dumper': 'Водитель карьерного самосвала',
     'car_driver': 'Водитель легкового автомобиля',
     'truck_driver': 'Водитель грузового автомобиля',
@@ -25,6 +25,25 @@ const positionNames = {
     'foreman': 'Мастер участка',
     'other': 'Другая должность'
 };
+
+// Динамическое получение специальностей из localStorage (синхронизация с админкой)
+function getSpecialties() {
+    const saved = localStorage.getItem('kpp_specialties');
+    return saved ? JSON.parse(saved) : DEFAULT_SPECIALTIES;
+}
+
+const positionNames = new Proxy({}, {
+    get(target, prop) {
+        const specs = getSpecialties();
+        return specs[prop] || prop;
+    },
+    ownKeys(target) {
+        return Object.keys(getSpecialties());
+    },
+    getOwnPropertyDescriptor(target, prop) {
+        return { configurable: true, enumerable: true, value: getSpecialties()[prop] };
+    }
+});
 
 const translations = {
     ru: {
@@ -73,53 +92,18 @@ const translations = {
     }
 };
 
-function setLanguage(lang) {
-    currentLang = lang;
-    const t = translations[lang];
-    if (!t) return;
+// Заполнение селекта должностей на главной странице
+function populatePositionsList() {
+    const selectElem = document.getElementById('position');
+    if (!selectElem) return;
 
-    // Шаги и шапка
-    if (document.getElementById('step-lbl-1')) document.getElementById('step-lbl-1').innerText = t.step1;
-    if (document.getElementById('step-lbl-2')) document.getElementById('step-lbl-2').innerText = t.step2;
-    if (document.getElementById('step-lbl-3')) document.getElementById('step-lbl-3').innerText = t.step3;
-
-    // Инструктаж
-    if (document.getElementById('instr-tag')) document.getElementById('instr-tag').innerText = t.instrTag;
-    if (document.getElementById('instr-title')) document.getElementById('instr-title').innerText = t.instrTitle;
-    if (document.getElementById('instr-desc')) document.getElementById('instr-desc').innerText = t.instrDesc;
-
-    // Форма сотрудника
-    if (document.getElementById('sec1-title')) document.getElementById('sec1-title').innerText = t.sec1Title;
-    if (document.getElementById('lbl-fio')) document.getElementById('lbl-fio').innerText = t.lblFio;
-    if (document.getElementById('lbl-phone')) document.getElementById('lbl-phone').innerText = t.lblPhone;
-    if (document.getElementById('lbl-birth')) document.getElementById('lbl-birth').innerText = t.lblBirth;
-    if (document.getElementById('lbl-citizenship')) document.getElementById('lbl-citizenship').innerText = t.lblCitizenship;
-    if (document.getElementById('lbl-pos')) document.getElementById('lbl-pos').innerText = t.lblPos;
-    if (document.getElementById('btn-next')) document.getElementById('btn-next').innerText = t.btnNext;
-    
-    // Тест и результат
-    if (document.getElementById('sec2-title')) document.getElementById('sec2-title').innerText = t.sec2Title;
-    if (document.getElementById('btn-back')) document.getElementById('btn-back').innerText = t.btnBack;
-    if (document.getElementById('btn-submit')) document.getElementById('btn-submit').innerText = t.btnSubmit;
-    if (document.getElementById('res-title')) document.getElementById('res-title').innerText = t.resTitle;
-    if (document.getElementById('res-desc')) document.getElementById('res-desc').innerText = t.resDesc;
-    if (document.getElementById('btn-restart')) document.getElementById('btn-restart').innerText = t.btnRestart;
-
-    // Подсветка кнопок переключения
-    const btnRu = document.getElementById('btn-ru');
-    const btnKk = document.getElementById('btn-kk');
-    if (btnRu && btnKk) {
-        btnRu.className = lang === 'ru'
-            ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
-            : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
-        btnKk.className = lang === 'kk'
-            ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
-            : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
-    }
-
-    // Если открыт второй шаг, перегружаем вопросы на казахском/русском
-    if (document.getElementById('step-2') && !document.getElementById('step-2').classList.contains('hidden')) {
-        loadQuestions();
+    const specs = getSpecialties();
+    selectElem.innerHTML = '';
+    for (const [key, name] of Object.entries(specs)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = name;
+        selectElem.appendChild(option);
     }
 }
 
@@ -135,13 +119,18 @@ function shuffleArray(array) {
     return arr;
 }
 
-// 1. МУЛЬТИЯЗЫЧНОСТЬ
+// МУЛЬТИЯЗЫЧНОСТЬ
 function setLanguage(lang) {
     currentLang = lang;
     const t = translations[lang];
     if (!t) return;
 
-    if (document.getElementById('sub-header')) document.getElementById('sub-header').innerText = t.subHeader;
+    if (document.getElementById('step-lbl-1')) document.getElementById('step-lbl-1').innerText = t.step1;
+    if (document.getElementById('step-lbl-2')) document.getElementById('step-lbl-2').innerText = t.step2;
+    if (document.getElementById('step-lbl-3')) document.getElementById('step-lbl-3').innerText = t.step3;
+    if (document.getElementById('instr-tag')) document.getElementById('instr-tag').innerText = t.instrTag;
+    if (document.getElementById('instr-title')) document.getElementById('instr-title').innerText = t.instrTitle;
+    if (document.getElementById('instr-desc')) document.getElementById('instr-desc').innerText = t.instrDesc;
     if (document.getElementById('sec1-title')) document.getElementById('sec1-title').innerText = t.sec1Title;
     if (document.getElementById('lbl-fio')) document.getElementById('lbl-fio').innerText = t.lblFio;
     if (document.getElementById('lbl-phone')) document.getElementById('lbl-phone').innerText = t.lblPhone;
@@ -160,11 +149,11 @@ function setLanguage(lang) {
     const btnKk = document.getElementById('btn-kk');
     if (btnRu && btnKk) {
         btnRu.className = lang === 'ru'
-            ? 'px-4 py-1.5 text-xs font-bold rounded-sm bg-kpp-navy text-white transition-all'
-            : 'px-4 py-1.5 text-xs font-bold rounded-sm text-kpp-muted hover:text-kpp-navy transition-all';
+            ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
+            : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
         btnKk.className = lang === 'kk'
-            ? 'px-4 py-1.5 text-xs font-bold rounded-sm bg-kpp-navy text-white transition-all'
-            : 'px-4 py-1.5 text-xs font-bold rounded-sm text-kpp-muted hover:text-kpp-navy transition-all';
+            ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
+            : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
     }
 
     if (document.getElementById('step-2') && !document.getElementById('step-2').classList.contains('hidden')) {
@@ -172,7 +161,7 @@ function setLanguage(lang) {
     }
 }
 
-// 2. ВАЛИДАЦИЯ (БЕЗ ИИН)
+// ВАЛИДАЦИЯ
 async function goToStep2() {
     const fullName = document.getElementById('full_name')?.value.trim();
     const phone = document.getElementById('phone')?.value.trim();
@@ -218,7 +207,7 @@ function goToStep1() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 3. ОТРИСОВКА И ПЕРЕМЕШИВАНИЕ ВОПРОСОВ И ОТВЕТОВ
+// ЗАГРУЗКА ВОПРОСОВ
 async function loadQuestions() {
     const category = document.getElementById('position').value;
     const container = document.getElementById('questions-container');
@@ -232,17 +221,11 @@ async function loadQuestions() {
 
     try {
         const response = await fetch(`/api/questions?category=${category}&lang=${currentLang}`);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const rawQuestions = await response.json();
+        if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) throw new Error('Вопросы не найдены');
 
-        if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
-            throw new Error('Вопросы не найдены');
-        }
-
-        // 🔀 1. ПЕРЕМЕШИВАЕМ ПОРЯДОК САМИХ ВОПРОСОВ
         loadedQuestions = shuffleArray(rawQuestions);
 
         loadedQuestions.forEach((q, idx) => {
@@ -250,10 +233,8 @@ async function loadQuestions() {
             qBox.className = "question-card p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3";
             qBox.setAttribute('data-id', q.id);
 
-            // 🧹 Убираем префикс вида "[17/20] " или "[1/20] " из текста вопроса
             const cleanText = q.text.replace(/^\[\d+\/\d+\]\s*/, '');
 
-            // 🔀 2. ПРИВЯЗЫВАЕМ НАСТОЯЩИЙ ИНДЕКС К КАЖДОМУ ВАРИАНТУ И ПЕРЕМЕШИВАЕМ ВАРИАНТЫ
             let indexedOptions = q.options.map((optText, origIndex) => ({
                 text: optText,
                 originalIndex: origIndex
@@ -288,32 +269,25 @@ async function loadQuestions() {
     } catch (err) {
         console.error('Ошибка загрузки вопросов:', err);
         if (errorContainer) {
-            errorContainer.innerText = currentLang === 'ru'
-                ? 'Не удалось загрузить вопросы. Попробуйте перезагрузить страницу или обратитесь к администратору.'
-                : 'Сұрақтарды жүктеу мүмкін болмады. Бетті қайта жүктеп көріңіз немесе әкімшіге хабарласыңыз.';
+            errorContainer.innerText = currentLang === 'ru' ? 'Не удалось загрузить вопросы.' : 'Сұрақтарды жүктеу мүмкін болмады.';
             errorContainer.classList.remove('hidden');
-        } else {
-            alert(currentLang === 'ru'
-                ? 'Не удалось загрузить вопросы. Попробуйте перезагрузить страницу.'
-                : 'Сұрақтарды жүктеу мүмкін болмады. Бетті қайта жүктеп көріңіз.');
         }
         return false;
     }
 }
 
-// 4. ОТПРАВКА ФОРМЫ (ЗАЩИЩЕНА ОТ ДУБЛИРОВАНИЯ)
+// ОТПРАВКА ФОРМЫ
 async function handleFormSubmit(e) {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
 
-    if (isSubmitting) return; // Защита от дублирующего запроса
+    if (isSubmitting) return;
 
     const submitBtn = document.getElementById('btn-submit');
     const originalBtnText = submitBtn ? submitBtn.innerText : 'ОТПРАВИТЬ';
 
-    // Сбор всех выбранных ответов
     const userAnswers = {};
     const cards = document.querySelectorAll('.question-card');
 
@@ -326,13 +300,10 @@ async function handleFormSubmit(e) {
     });
 
     if (Object.keys(userAnswers).length < cards.length) {
-        alert(currentLang === 'ru' 
-            ? "Пожалуйста, ответьте на все вопросы перед отправкой!" 
-            : "Өтініш, барлық сұрақтарға жауап беріңіз!");
+        alert(currentLang === 'ru' ? "Пожалуйста, ответьте на все вопросы!" : "Өтініш, барлық сұрақтарға жауап беріңіз!");
         return;
     }
 
-    // Блокируем форму
     isSubmitting = true;
     if (submitBtn) {
         submitBtn.disabled = true;
@@ -364,9 +335,7 @@ async function handleFormSubmit(e) {
             body: formData
         });
 
-        if (!response.ok) {
-            throw new Error(`Ошибка сервера: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
 
         const result = await response.json();
 
@@ -380,7 +349,6 @@ async function handleFormSubmit(e) {
             const detailsContainer = document.getElementById('results-details-container');
             if (detailsContainer) {
                 detailsContainer.innerHTML = '';
-
                 if (result.details && result.details.length > 0) {
                     result.details.forEach((item, index) => {
                         const qRawText = currentLang === 'ru' ? item.text_ru : item.text_kk;
@@ -405,13 +373,10 @@ async function handleFormSubmit(e) {
                                 ${badge}
                             </div>
                             <div class="text-[11px] space-y-0.5 pt-1.5 border-t border-slate-200/60">
-                                <p class="${item.is_correct ? 'text-emerald-900' : 'text-red-900 font-semibold'}">
-                                    <strong>Ваш ответ:</strong> ${userAnsText}
-                                </p>
+                                <p class="${item.is_correct ? 'text-emerald-900' : 'text-red-900 font-semibold'}"><strong>Ваш ответ:</strong> ${userAnsText}</p>
                                 ${!item.is_correct ? `<p class="text-emerald-800 font-semibold"><strong>Правильный ответ:</strong> ${correctAnsText}</p>` : ''}
                             </div>
                         `;
-
                         detailsContainer.appendChild(card);
                     });
                 }
@@ -424,7 +389,7 @@ async function handleFormSubmit(e) {
         console.error("Ошибка при отправке:", err);
         alert('Не удалось отправить анкету. Проверьте соединение с сервером.');
     } finally {
-        isSubmitting = false; // Разблокировка
+        isSubmitting = false;
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerText = originalBtnText;
@@ -432,8 +397,10 @@ async function handleFormSubmit(e) {
     }
 }
 
-// 5. ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ
+// ИНИЦИАЛИЗАЦИЯ
 document.addEventListener('DOMContentLoaded', () => {
+    populatePositionsList(); // Заполняем специальности из localStorage при загрузке
+
     const quizForm = document.getElementById('quiz-form');
     const nextButton = document.getElementById('btn-next');
 
