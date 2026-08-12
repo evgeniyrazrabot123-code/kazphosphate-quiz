@@ -6,17 +6,16 @@ import csv
 import io
 from pathlib import Path
 from uuid import uuid4
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Optional
 
-from fastapi import FastAPI, Depends, UploadFile, File, Form, Response, HTTPException, Header, status, Request
+from fastapi import FastAPI, Depends, UploadFile, File, Form, Response, HTTPException, Header, status, Request, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Boolean, Float, inspect, Integer, String, Text, DateTime, text
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from dateutil.relativedelta import relativedelta  # Требуется: pip install python-dateutil
 
 # =====================================================================
 # НАСТРОЙКА ПУТЕЙ
@@ -40,11 +39,19 @@ except ImportError:
         seed_questions = None
 
 try:
+    from .seed_data import CATEGORIES as START_CATEGORIES
+except Exception:
+    try:
+        from seed_data import CATEGORIES as START_CATEGORIES
+    except Exception:
+        START_CATEGORIES = []
+
+try:
     from . import models
-    from .database import engine, get_db
+    from .database import engine, get_db, DATABASE_PATH
 except ImportError:
     import models
-    from database import engine, get_db
+    from database import engine, get_db, DATABASE_PATH
 
 # =====================================================================
 # АВТОРИЗАЦИЯ АДМИНА
@@ -90,6 +97,16 @@ def add_missing_columns(engine):
                 conn.execute(text(add_sql))
 
 models.Base.metadata.create_all(bind=engine)
+
+# Создаём резервную копию файла БД перед применением ALTER TABLE
+try:
+    db_path = Path(DATABASE_PATH)
+    if db_path.exists():
+        bak = db_path.with_suffix(f".bak.{datetime.utcnow().strftime('%Y%m%d%H%M%S')}")
+        shutil.copy2(db_path, bak)
+except Exception as be:
+    print(f"Не удалось создать резервную копию БД: {be}")
+
 add_missing_columns(engine)
 
 # =====================================================================
@@ -111,7 +128,24 @@ def startup_event():
     try:
         db = next(get_db())
         if seed_questions and db.query(models.Question).count() == 0:
-            seed_questions(db)
+            try:
+                seed_questions()
+            except TypeError:
+                # backward compatibility: if seed_questions expects a session
+                try:
+                    seed_questions(db)
+                except Exception as e:
+                    print(f"Ошибка при запуске seed_questions: {e}")
+        # Seed specialties from CATEGORIES if table empty
+        try:
+            if hasattr(models, 'Specialty') and db.query(models.Specialty).count() == 0 and START_CATEGORIES:
+                for code, name_ru, name_kk in START_CATEGORIES:
+                    s = models.Specialty(code=code, name_ru=name_ru, name_kk=name_kk)
+                    db.add(s)
+                db.commit()
+        except Exception as se:
+            db.rollback()
+            print(f"Ошибка при заполнении специальностей: {se}")
     except Exception as e:
         print(f"Ошибка при заполнении начальных данных: {e}")
 
@@ -288,7 +322,7 @@ def admin_login(username: str = Form(...), password: str = Form(...)):
 
 @app.get("/api/admin/results")
 def get_results_admin(request: Request, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
-    results = db.query(models.TestResult).all()
+    results = db.query(models.TestResult).filter(getattr(models.TestResult, 'is_deleted', False) == False).all()
     output = []
     
     for r in results:
@@ -328,29 +362,21 @@ def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = De
     res = db.query(models.TestResult).filter(models.TestResult.id == r_id).first()
     if not res:
         raise HTTPException(status_code=404, detail="Результат не найден")
-    
-    emp_id = res.employee_id
-    
-    # Каскадное удаление результатов и связанных записей
+
+    # Soft-delete: помечаем результат как удалённый, но не удаляем запись из БД
+    if hasattr(res, 'is_deleted'):
+        res.is_deleted = True
+        db.commit()
+        return {"status": "success", "message": "Запись помечена как удалённая (soft-delete)"}
+
+    # Fallback: если нет поля is_deleted, выполняем удаление (старое поведение)
     db.delete(res)
     db.commit()
-
-    if emp_id:
-        emp = db.query(models.Employee).filter(models.Employee.id == emp_id).first()
-        if emp:
-            db.delete(emp)
-        
-        pass_card = db.query(models.PassCard).filter(models.PassCard.id == emp_id).first()
-        if pass_card:
-            db.delete(pass_card)
-            
-        db.commit()
-
     return {"status": "success", "message": "Запись успешно удалена"}
 
 @app.get("/api/admin/results/export/csv")
 def export_results_csv(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
-    results = db.query(models.TestResult).all()
+    results = db.query(models.TestResult).filter(getattr(models.TestResult, 'is_deleted', False) == False).all()
     
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';')
@@ -383,6 +409,124 @@ def export_results_csv(db: Session = Depends(get_db), admin_auth: str = Depends(
     response = Response(content=output.getvalue().encode('utf-8-sig'), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=kazphosphate_results.csv"
     return response
+
+# =====================================================================
+# API: СПЕЦИАЛЬНОСТИ
+# =====================================================================
+@app.get('/api/specialties')
+def get_specialties(db: Session = Depends(get_db)):
+    try:
+        if hasattr(models, 'Specialty'):
+            specs = db.query(models.Specialty).all()
+            if specs:
+                return {s.code: s.name_ru for s in specs}
+    except Exception:
+        pass
+
+    # Fallback to START_CATEGORIES
+    if START_CATEGORIES:
+        return {code: name_ru for code, name_ru, _ in START_CATEGORIES}
+    return {}
+
+
+@app.get('/api/admin/specialties')
+def admin_get_specialties(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    if not hasattr(models, 'Specialty'):
+        return []
+    specs = db.query(models.Specialty).all()
+    return [{"code": s.code, "name_ru": s.name_ru, "name_kk": s.name_kk} for s in specs]
+
+
+@app.post('/api/admin/specialties')
+def admin_save_specialty(code: str = Form(...), name_ru: str = Form(...), name_kk: str = Form(None), db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    if not hasattr(models, 'Specialty'):
+        raise HTTPException(status_code=500, detail='Specialty model not available')
+
+    code_clean = code.strip()
+    spec = db.query(models.Specialty).filter(models.Specialty.code == code_clean).first()
+    if not spec:
+        spec = models.Specialty(code=code_clean, name_ru=name_ru.strip(), name_kk=name_kk)
+        db.add(spec)
+    else:
+        spec.name_ru = name_ru.strip()
+        spec.name_kk = name_kk
+
+    db.commit()
+    return {"status": "success"}
+
+
+@app.post('/api/admin/specialties/bulk')
+def admin_save_specialties_bulk(specs: dict = Body(...), db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    if not hasattr(models, 'Specialty'):
+        raise HTTPException(status_code=500, detail='Specialty model not available')
+
+    try:
+        # Upsert each provided specialty
+        for code, name in specs.items():
+            code_clean = str(code).strip()
+            if not code_clean:
+                continue
+            s = db.query(models.Specialty).filter(models.Specialty.code == code_clean).first()
+            if s:
+                s.name_ru = str(name)
+            else:
+                db.add(models.Specialty(code=code_clean, name_ru=str(name)))
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete('/api/admin/specialties/{code}')
+def admin_delete_specialty(code: str, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    if not hasattr(models, 'Specialty'):
+        raise HTTPException(status_code=500, detail='Specialty model not available')
+    spec = db.query(models.Specialty).filter(models.Specialty.code == code).first()
+    if not spec:
+        raise HTTPException(status_code=404, detail='Специальность не найдена')
+    db.delete(spec)
+    db.commit()
+    return {"status": "success"}
+
+
+# =====================================================================
+# API: БЭКАПЫ БД
+# =====================================================================
+@app.get('/api/admin/db/backups')
+def list_db_backups(admin_auth: str = Depends(get_admin_authorization)):
+    db_path = Path(DATABASE_PATH)
+    if not db_path.exists():
+        return []
+    parent = db_path.parent
+    backups = sorted(parent.glob(db_path.name + '.bak.*'), key=lambda p: p.stat().st_mtime, reverse=True)
+    return [{"path": str(p.name), "mtime": p.stat().st_mtime} for p in backups]
+
+
+@app.post('/api/admin/db/restore')
+def restore_db(backup_name: str | None = Form(None), admin_auth: str = Depends(get_admin_authorization)):
+    db_path = Path(DATABASE_PATH)
+    parent = db_path.parent
+    backups = sorted(parent.glob(db_path.name + '.bak.*'), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not backups:
+        raise HTTPException(status_code=404, detail='Бэкапов не найдено')
+
+    target = None
+    if backup_name:
+        candidate = parent / backup_name
+        if candidate.exists():
+            target = candidate
+    else:
+        target = backups[0]
+
+    if not target:
+        raise HTTPException(status_code=404, detail='Указанный бэкап не найден')
+
+    try:
+        shutil.copy2(str(target), str(db_path))
+        return {"status": "success", "restored": str(target.name)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/questions")
 def get_all_questions_admin(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
@@ -446,12 +590,19 @@ def calculate_expiry_date(start_date: date, category: str) -> date:
     """
     cat = (category or "A").upper()
     if cat == 'A':
-        return start_date + relativedelta(years=1)
+        try:
+            return start_date.replace(year=start_date.year + 1)
+        except Exception:
+            return start_date + timedelta(days=365)
     elif cat == 'B':
-        return start_date + relativedelta(months=6)
+        # approx 6 months = 180 days
+        return start_date + timedelta(days=180)
     elif cat == 'C':
-        return start_date + relativedelta(days=1)
-    return start_date + relativedelta(years=1)
+        return start_date + timedelta(days=1)
+    try:
+        return start_date.replace(year=start_date.year + 1)
+    except Exception:
+        return start_date + timedelta(days=365)
 
 class PassCardUpdateSchema(BaseModel):
     full_name: Optional[str] = None

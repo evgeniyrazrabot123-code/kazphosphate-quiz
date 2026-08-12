@@ -33,6 +33,17 @@ function getSpecialties() {
 function saveSpecialties(specs) {
     localStorage.setItem('kpp_specialties', JSON.stringify(specs));
     populateCategorySelects();
+
+    // Попытка синхронизировать специальности на сервере (если авторизован админ)
+    if (adminToken) {
+        adminFetch('/api/admin/specialties/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(specs)
+        }).catch(() => {
+            // Игнорируем ошибки синхронизации, данные уже сохранены в localStorage
+        });
+    }
 }
 
 const positionNames = new Proxy({}, {
@@ -154,11 +165,49 @@ function switchTab(tab) {
 // 3. УПРАВЛЕНИЕ СПЕЦИАЛЬНОСТЯМИ
 // ------------------------------------------------------------------
 function renderSpecialtiesTable() {
-    const specs = getSpecialties();
+    // Если админ авторизован — попробуем загрузить с сервера
     const tbody = document.getElementById('specialties-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
 
+    if (adminToken) {
+        adminFetch('/api/admin/specialties').then(r => r.json()).then(list => {
+            list.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${s.code}</td>
+                    <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${s.name_ru}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editSpecialty('${s.code}', '${s.name_ru}')" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
+                        <button onclick="deleteSpecialty('${s.code}')" class="text-red-600 hover:underline font-bold text-xs">Удалить</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }).catch(() => {
+            const specs = getSpecialties();
+            for (const [key, name] of Object.entries(specs)) {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${key}</td>
+                    <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${name}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editSpecialty('${key}', '${name}')" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
+                        <button onclick="deleteSpecialty('${key}')" class="text-red-600 hover:underline font-bold text-xs">Удалить</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        });
+        return;
+    }
+
+    const specs = getSpecialties();
+    const tbody = document.getElementById('specialties-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
     for (const [key, name] of Object.entries(specs)) {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition-colors";
@@ -192,6 +241,27 @@ function saveSpecialty(e) {
 
     specs[key] = name;
     saveSpecialties(specs);
+    // Если админ — синхронизируем одиночную запись с сервером
+    if (adminToken) {
+        const form = new URLSearchParams();
+        form.append('code', key);
+        form.append('name_ru', name);
+        adminFetch('/api/admin/specialties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: form.toString()
+        }).then(() => {
+            resetSpecForm();
+            renderSpecialtiesTable();
+            alert('Специальность успешно сохранена на сервере!');
+        }).catch(() => {
+            resetSpecForm();
+            renderSpecialtiesTable();
+            alert('Специальность сохранена локально, но не удалось синхронизировать с сервером.');
+        });
+        return;
+    }
+
     resetSpecForm();
     renderSpecialtiesTable();
     alert('Специальность успешно сохранена!');
@@ -209,6 +279,17 @@ function deleteSpecialty(key) {
     let specs = getSpecialties();
     delete specs[key];
     saveSpecialties(specs);
+    // Если админ — удалим на сервере тоже
+    if (adminToken) {
+        adminFetch(`/api/admin/specialties/${encodeURIComponent(key)}`, { method: 'DELETE' }).then(() => {
+            renderSpecialtiesTable();
+        }).catch(() => {
+            renderSpecialtiesTable();
+            alert('Специальность удалена локально, но не удалось удалить на сервере.');
+        });
+        return;
+    }
+
     renderSpecialtiesTable();
 }
 

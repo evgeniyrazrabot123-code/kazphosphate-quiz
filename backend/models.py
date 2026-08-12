@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Date, Boolean
 from sqlalchemy.orm import relationship
 
 try:
@@ -46,6 +46,7 @@ class TestResult(Base):
     score = Column(Integer)
     total_questions = Column(Integer)
     passed_at = Column(DateTime, default=datetime.datetime.utcnow)
+    is_deleted = Column(Boolean, default=False)
 
     employee = relationship("Employee", back_populates="results")
 
@@ -77,3 +78,12 @@ class PassCard(Base):
     expiry_date = Column(Date)
     
     photo_url = Column(String, nullable=True)
+
+
+class Specialty(Base):
+    __tablename__ = "specialties"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True)
+    name_ru = Column(String)
+    name_kk = Column(String, nullable=True)

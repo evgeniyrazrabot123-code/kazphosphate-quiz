@@ -1,0 +1,1 @@
+Place migration scripts here. Use alembic revision --autogenerate -m "message" to create a new migration.
