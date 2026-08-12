@@ -205,7 +205,6 @@ function renderSpecialtiesTable() {
     }
 
     const specs = getSpecialties();
-    const tbody = document.getElementById('specialties-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
     for (const [key, name] of Object.entries(specs)) {
