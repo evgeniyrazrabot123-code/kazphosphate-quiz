@@ -28,40 +28,100 @@ const positionNames = {
 
 const translations = {
     ru: {
-        subHeader: 'Система аттестации персонала и оценки производственных допусков',
-        sec1Title: 'Раздел 1. Данные сотрудника',
-        lblFio: '1. Фамилия, имя, отчество (полностью)',
-        lblPhone: '2. Контактный телефон',
-        lblBirth: '3. Дата рождения',
-        lblCitizenship: '4. Гражданство',
-        lblPos: '5. Специальность / Должность',
-        btnNext: 'Перейти к тестированию →',
-        sec2Title: 'Раздел 2. Проверка профессиональных знаний',
-        btnBack: '← Назад',
-        btnSubmit: 'Подтвердить и отправить результаты',
+        step1: 'Данные сотрудника',
+        step2: 'Тестирование',
+        step3: 'Результат',
+        instrTag: 'ИНСТРУКТАЖ ПО ТЕСТИРОВАНИЮ ПЕРСОНАЛА',
+        instrTitle: 'Цель и порядок проведения тестирования',
+        instrDesc: 'Настоящая проверка предназначена для подтверждения уровня профессиональной подготовки, допусков к работе на объектах повышенной опасности и знаний требований охраны труда ТОО «Казфосфат».',
+        sec1Title: '01. ДАННЫЕ СОТРУДНИКА',
+        lblFio: 'ФАМИЛИЯ, ИМЯ, ОТЧЕСТВО (ПОЛНОСТЬЮ)',
+        lblPhone: 'КОНТАКТНЫЙ ТЕЛЕФОН',
+        lblBirth: 'ДАТА РОЖДЕНИЯ',
+        lblCitizenship: 'ГРАЖДАНСТВО',
+        lblPos: 'СПЕЦИАЛЬНОСТЬ / ДОЛЖНОСТЬ',
+        btnNext: 'ПЕРЕЙТИ К ТЕСТИРОВАНИЮ →',
+        sec2Title: '02. ПРОВЕРКА ПРОФЕССИОНАЛЬНЫХ ЗНАНИЙ',
+        btnBack: '← НАЗАД',
+        btnSubmit: 'ПОДТВЕРДИТЬ И ОТПРАВИТЬ РЕЗУЛЬТАТЫ',
         resTitle: 'Тестирование успешно пройдено',
         resDesc: 'Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».',
         btnRestart: 'Завершить сессию',
-        sendingText: 'Отправка данных...'
+        sendingText: 'ОТПРАВКА...'
     },
     kk: {
-        subHeader: 'Персоналды тестирования және өндірістік рұқсаттарды бағалау жүйесі',
-        sec1Title: '1-Бөлім. Қызметкердің мәліметтері',
-        lblFio: '1. Тегі, аты, әкесінің аты (толық)',
-        lblPhone: '2. Байланыс телефоны',
-        lblBirth: '3. Туған күні',
-        lblCitizenship: '4. Азаматтығы',
-        lblPos: '5. Мамандығы / Лауазымы',
-        btnNext: 'Тестке өту →',
-        sec2Title: '2-Бөлім. Кәсіби білімді тексеру',
-        btnBack: '← Артқа',
-        btnSubmit: 'Растау және нәтижені жіберу',
+        step1: 'Қызметкер деректері',
+        step2: 'Тестирование',
+        step3: 'Нәтиже',
+        instrTag: 'ПЕРСОНАЛДЫ ТЕСТИРОВАНИЕ БОЙЫНША НҰСҚАУЛЫҚ',
+        instrTitle: 'Тестирлеудің мақсаты мен өткізу тәртібі',
+        instrDesc: 'Бұл тексеру кәсіби дайындық деңгейін, қауіптілігі жоғары объектілерде жұмыс істеуге рұқсаттарды және «Қазфосфат» ЖШС еңбекті қорғау талаптарының білімін растауға арналған.',
+        sec1Title: '01. ҚЫЗМЕТКЕРДІҢ МӘЛІМЕТТЕРІ',
+        lblFio: 'ТЕГІ, АТЫ, ӘКЕСІНІҢ АТЫ (ТОЛЫҚ)',
+        lblPhone: 'БАЙЛАНЫС ТЕЛЕФОНЫ',
+        lblBirth: 'ТУҒАН КҮНІ',
+        lblCitizenship: 'АЗАМАТТЫҒЫ',
+        lblPos: 'МАМАНДЫҒЫ / ЛАУАЗЫМЫ',
+        btnNext: 'ТЕСТКЕ ӨТУ →',
+        sec2Title: '02. КӘСІБИ БІЛІМДІ ТЕКСЕРУ',
+        btnBack: '← АРТҚА',
+        btnSubmit: 'РАСТАУ ЖӘНЕ НӘТИЖЕНІ ЖІБЕРУ',
         resTitle: 'Тестирование сәтті өтті',
         resDesc: 'Мәліметтер «Қазфосфат» ЖШС біліктілік комиссиясының хаттамасында тіркелді.',
         btnRestart: 'Сессияны аяқтау',
-        sendingText: 'Жіберілуде...'
+        sendingText: 'ЖІБЕРІЛУДЕ...'
     }
 };
+
+function setLanguage(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    if (!t) return;
+
+    // Шаги и шапка
+    if (document.getElementById('step-lbl-1')) document.getElementById('step-lbl-1').innerText = t.step1;
+    if (document.getElementById('step-lbl-2')) document.getElementById('step-lbl-2').innerText = t.step2;
+    if (document.getElementById('step-lbl-3')) document.getElementById('step-lbl-3').innerText = t.step3;
+
+    // Инструктаж
+    if (document.getElementById('instr-tag')) document.getElementById('instr-tag').innerText = t.instrTag;
+    if (document.getElementById('instr-title')) document.getElementById('instr-title').innerText = t.instrTitle;
+    if (document.getElementById('instr-desc')) document.getElementById('instr-desc').innerText = t.instrDesc;
+
+    // Форма сотрудника
+    if (document.getElementById('sec1-title')) document.getElementById('sec1-title').innerText = t.sec1Title;
+    if (document.getElementById('lbl-fio')) document.getElementById('lbl-fio').innerText = t.lblFio;
+    if (document.getElementById('lbl-phone')) document.getElementById('lbl-phone').innerText = t.lblPhone;
+    if (document.getElementById('lbl-birth')) document.getElementById('lbl-birth').innerText = t.lblBirth;
+    if (document.getElementById('lbl-citizenship')) document.getElementById('lbl-citizenship').innerText = t.lblCitizenship;
+    if (document.getElementById('lbl-pos')) document.getElementById('lbl-pos').innerText = t.lblPos;
+    if (document.getElementById('btn-next')) document.getElementById('btn-next').innerText = t.btnNext;
+    
+    // Тест и результат
+    if (document.getElementById('sec2-title')) document.getElementById('sec2-title').innerText = t.sec2Title;
+    if (document.getElementById('btn-back')) document.getElementById('btn-back').innerText = t.btnBack;
+    if (document.getElementById('btn-submit')) document.getElementById('btn-submit').innerText = t.btnSubmit;
+    if (document.getElementById('res-title')) document.getElementById('res-title').innerText = t.resTitle;
+    if (document.getElementById('res-desc')) document.getElementById('res-desc').innerText = t.resDesc;
+    if (document.getElementById('btn-restart')) document.getElementById('btn-restart').innerText = t.btnRestart;
+
+    // Подсветка кнопок переключения
+    const btnRu = document.getElementById('btn-ru');
+    const btnKk = document.getElementById('btn-kk');
+    if (btnRu && btnKk) {
+        btnRu.className = lang === 'ru'
+            ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
+            : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
+        btnKk.className = lang === 'kk'
+            ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
+            : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
+    }
+
+    // Если открыт второй шаг, перегружаем вопросы на казахском/русском
+    if (document.getElementById('step-2') && !document.getElementById('step-2').classList.contains('hidden')) {
+        loadQuestions();
+    }
+}
 
 // ЧИСТАЯ ФУНКЦИЯ ПЕРЕМЕШИВАНИЯ (Алгоритм Фишера-Йейтса)
 function shuffleArray(array) {
