@@ -2,7 +2,7 @@ let globalResults = [];
 let adminToken = '';
 const API_BASE = ''; 
 
-const positionNames = {
+const DEFAULT_SPECIALTIES = {
     'dumper': 'Водитель карьерного самосвала',
     'car_driver': 'Водитель легкового автомобиля',
     'truck_driver': 'Водитель грузового автомобиля',
@@ -24,6 +24,29 @@ const positionNames = {
     'foreman': 'Мастер участка',
     'other': 'Другая должность'
 };
+
+function getSpecialties() {
+    const saved = localStorage.getItem('kpp_specialties');
+    return saved ? JSON.parse(saved) : DEFAULT_SPECIALTIES;
+}
+
+function saveSpecialties(specs) {
+    localStorage.setItem('kpp_specialties', JSON.stringify(specs));
+    populateCategorySelects();
+}
+
+const positionNames = new Proxy({}, {
+    get(target, prop) {
+        const specs = getSpecialties();
+        return specs[prop] || prop;
+    },
+    ownKeys(target) {
+        return Object.keys(getSpecialties());
+    },
+    getOwnPropertyDescriptor(target, prop) {
+        return { configurable: true, enumerable: true, value: getSpecialties()[prop] };
+    }
+});
 
 function adminFetch(path, options = {}) {
     options.headers = options.headers || {};
@@ -54,13 +77,13 @@ function showAdminApp() {
     document.getElementById('admin-app')?.classList.remove('hidden');
 }
 
-// Заполнение выпадающего списка специальностей
 function populateCategorySelects() {
+    const specs = getSpecialties();
     const selectElem = document.getElementById('q_category');
     if (!selectElem) return;
 
     selectElem.innerHTML = '';
-    for (const [key, name] of Object.entries(positionNames)) {
+    for (const [key, name] of Object.entries(specs)) {
         const option = document.createElement('option');
         option.value = key;
         option.textContent = name;
@@ -73,7 +96,6 @@ function populateCategorySelects() {
 // ------------------------------------------------------------------
 async function loginAdmin(e) {
     e.preventDefault();
-
     const username = document.getElementById('admin-login')?.value.trim();
     const password = document.getElementById('admin-password')?.value;
     const errorNode = document.getElementById('login-error');
@@ -89,9 +111,7 @@ async function loginAdmin(e) {
             body: body.toString()
         });
 
-        if (!response.ok) {
-            throw new Error('invalid_credentials');
-        }
+        if (!response.ok) throw new Error('invalid_credentials');
 
         const data = await response.json();
         adminToken = data.token;
@@ -100,9 +120,7 @@ async function loginAdmin(e) {
         switchTab('results');
     } catch (err) {
         if (errorNode) {
-            errorNode.innerText = err.message === 'invalid_credentials'
-                ? 'Неверный логин или пароль. Попробуйте снова.'
-                : 'Ошибка связи с сервером. Попробуйте чуть позже.';
+            errorNode.innerText = 'Неверный логин или пароль.';
             errorNode.classList.remove('hidden');
         }
     }
@@ -112,62 +130,101 @@ async function loginAdmin(e) {
 // 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
 // ------------------------------------------------------------------
 function switchTab(tab) {
-    const activeClass = "px-4 py-2.5 font-extrabold rounded-lg bg-[#002B49] text-white text-xs uppercase tracking-wider shadow-sm transition";
-    const inactiveClass = "px-4 py-2.5 font-extrabold rounded-lg text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 text-xs uppercase tracking-wider transition";
+    const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition";
+    const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-slate-900 bg-white border border-slate-300 text-xs uppercase tracking-wider transition";
 
-    document.getElementById('tab-results')?.classList.add('hidden');
-    document.getElementById('tab-questions-list')?.classList.add('hidden');
-    document.getElementById('tab-add-question')?.classList.add('hidden');
-    document.getElementById('tab-specialties')?.classList.add('hidden');
+    ['results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
+        document.getElementById(`tab-${t}`)?.classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}-btn`);
+        if (btn) btn.className = inactiveClass;
+    });
 
-    if (document.getElementById('tab-results-btn')) document.getElementById('tab-results-btn').className = inactiveClass;
-    if (document.getElementById('tab-questions-list-btn')) document.getElementById('tab-questions-list-btn').className = inactiveClass;
-    if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = inactiveClass;
-    if (document.getElementById('tab-specialties-btn')) document.getElementById('tab-specialties-btn').className = inactiveClass;
+    const targetTabId = tab.replace('_', '-');
+    document.getElementById(`tab-${targetTabId}`)?.classList.remove('hidden');
+    const targetBtn = document.getElementById(`tab-${targetTabId}-btn`);
+    if (targetBtn) targetBtn.className = activeClass;
 
-    if (tab === 'results') {
-        document.getElementById('tab-results')?.classList.remove('hidden');
-        if (document.getElementById('tab-results-btn')) document.getElementById('tab-results-btn').className = activeClass;
-        loadResults();
-    } else if (tab === 'questions_list') {
-        document.getElementById('tab-questions-list')?.classList.remove('hidden');
-        if (document.getElementById('tab-questions-list-btn')) document.getElementById('tab-questions-list-btn').className = activeClass;
-        loadQuestionsList();
-    } else if (tab === 'add_question') {
-        document.getElementById('tab-add-question')?.classList.remove('hidden');
-        if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = activeClass;
-        populateCategorySelects();
-    } else if (tab === 'specialties') {
-        document.getElementById('tab-specialties')?.classList.remove('hidden');
-        if (document.getElementById('tab-specialties-btn')) document.getElementById('tab-specialties-btn').className = activeClass;
-        renderSpecialtiesList();
-    }
-}
-
-function renderSpecialtiesList() {
-    const container = document.getElementById('specialties-list-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    for (const [key, name] of Object.entries(positionNames)) {
-        const card = document.createElement('div');
-        card.className = "p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col justify-between space-y-1";
-        card.innerHTML = `
-            <span class="font-mono text-[10px] text-slate-400 uppercase">ID: ${key}</span>
-            <span class="font-bold text-slate-800 text-xs">${name}</span>
-        `;
-        container.appendChild(card);
-    }
+    if (tab === 'results') loadResults();
+    else if (tab === 'questions_list') loadQuestionsList();
+    else if (tab === 'add_question') populateCategorySelects();
+    else if (tab === 'specialties') renderSpecialtiesTable();
 }
 
 // ------------------------------------------------------------------
-// 3. ЗАГРУЗКА РЕЗУЛЬТАТОВ ИЗ БД
+// 3. УПРАВЛЕНИЕ СПЕЦИАЛЬНОСТЯМИ
+// ------------------------------------------------------------------
+function renderSpecialtiesTable() {
+    const specs = getSpecialties();
+    const tbody = document.getElementById('specialties-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    for (const [key, name] of Object.entries(specs)) {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+            <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${key}</td>
+            <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${name}</td>
+            <td class="p-3 text-center space-x-2">
+                <button onclick="editSpecialty('${key}', '${name}')" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
+                <button onclick="deleteSpecialty('${key}')" class="text-red-600 hover:underline font-bold text-xs">Удалить</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+function saveSpecialty(e) {
+    e.preventDefault();
+    const keyInput = document.getElementById('spec-key');
+    const nameInput = document.getElementById('spec-name');
+    const oldKeyInput = document.getElementById('spec-old-key');
+
+    const key = keyInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+    const name = nameInput.value.trim();
+    const oldKey = oldKeyInput.value.trim();
+
+    let specs = getSpecialties();
+
+    if (oldKey && oldKey !== key) {
+        delete specs[oldKey];
+    }
+
+    specs[key] = name;
+    saveSpecialties(specs);
+    resetSpecForm();
+    renderSpecialtiesTable();
+    alert('Специальность успешно сохранена!');
+}
+
+function editSpecialty(key, name) {
+    document.getElementById('spec-key').value = key;
+    document.getElementById('spec-name').value = name;
+    document.getElementById('spec-old-key').value = key;
+    document.getElementById('spec-submit-btn').textContent = 'Сохранить изменения';
+}
+
+function deleteSpecialty(key) {
+    if (!confirm(`Удалить специальность "${key}"?`)) return;
+    let specs = getSpecialties();
+    delete specs[key];
+    saveSpecialties(specs);
+    renderSpecialtiesTable();
+}
+
+function resetSpecForm() {
+    document.getElementById('specialty-form')?.reset();
+    document.getElementById('spec-old-key').value = '';
+    document.getElementById('spec-submit-btn').textContent = 'Добавить специальность';
+}
+
+// ------------------------------------------------------------------
+// 4. ЗАГРУЗКА РЕЗУЛЬТАТОВ И БЕЙДЖИ
 // ------------------------------------------------------------------
 async function loadResults() {
     try {
         const response = await adminFetch('/api/admin/results');
         globalResults = await response.json();
-
         const tbody = document.getElementById('results-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -177,6 +234,7 @@ async function loadResults() {
             return;
         }
 
+        const specs = getSpecialties();
         globalResults.forEach((res, index) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50/80 transition-colors";
@@ -187,25 +245,19 @@ async function loadResults() {
             if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-600 hover:underline font-bold">Уд. Машиниста</a>`);
 
             const docsHtml = docs.length > 0 ? docs.join(' | ') : '<span class="text-slate-400">Нет</span>';
-            const prettyPosition = positionNames[res.position] || res.position;
+            const prettyPosition = specs[res.position] || res.position;
 
             tr.innerHTML = `
                 <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
                 <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
                 <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
-                <td class="p-3 border-r border-slate-100 font-extrabold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">
-                    ${res.score} / ${res.total_questions}
-                </td>
+                <td class="p-3 border-r border-slate-100 font-extrabold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
                 <td class="p-3 border-r border-slate-100">${docsHtml}</td>
                 <td class="p-3 text-center border-r border-slate-100">
-                    <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">
-                        🪪 Пропуск
-                    </button>
+                    <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
                 </td>
                 <td class="p-3 text-center">
-                    <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">
-                        Удалить
-                    </button>
+                    <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -216,30 +268,19 @@ async function loadResults() {
 }
 
 async function deleteResult(id) {
-    if (!confirm("Вы уверены, что хотите полностью удалить этот результат из базы данных?")) return;
-
+    if (!confirm("Удалить этот результат из базы данных?")) return;
     try {
-        const response = await adminFetch(`/api/admin/results/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            loadResults();
-        } else {
-            const errData = await response.json();
-            alert("Ошибка при удалении: " + (errData.detail || errData.message || "Не удалось удалить"));
-        }
+        const response = await adminFetch(`/api/admin/results/${id}`, { method: 'DELETE' });
+        if (response.ok) loadResults();
     } catch (err) {
-        console.error("Ошибка удаления:", err);
-        alert('Ошибка связи с сервером при попытке удаления');
+        alert('Ошибка связи с сервером');
     }
 }
 
 async function exportResultsCSV() {
     try {
         const response = await adminFetch('/api/admin/results/export/csv');
-        if (!response.ok) throw new Error('Ошибка при скачивании файла');
-
+        if (!response.ok) throw new Error();
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -248,41 +289,23 @@ async function exportResultsCSV() {
         document.body.appendChild(a);
         a.click();
         a.remove();
-        window.URL.revokeObjectURL(url);
     } catch (err) {
-        console.error("Ошибка экспорта CSV:", err);
-        alert('Не удалось выгрузить данные. Проверьте авторизацию или связь с сервером.');
+        alert('Не удалось выгрузить данные.');
     }
 }
 
-// ------------------------------------------------------------------
-// 4. КАРТА ДОПУСКА (БЕЙДЖ)
-// ------------------------------------------------------------------
 function openBadgeModal(index) {
     const res = globalResults[index];
     if (!res) return;
+    const specs = getSpecialties();
 
-    const passIdInput = document.getElementById('editPassId');
-    if (passIdInput) passIdInput.value = res.id;
-
-    const fullNameInput = document.getElementById('editFullName');
-    if (fullNameInput) fullNameInput.value = res.full_name || '';
-
-    const iinInput = document.getElementById('editIin');
-    if (iinInput) iinInput.value = res.iin || '';
-
-    const posInput = document.getElementById('editPosition');
-    if (posInput) posInput.value = positionNames[res.position] || res.position || '';
-
-    const orgInput = document.getElementById('editOrganization');
-    if (orgInput) orgInput.value = 'ТОО «КАЗФОСФАТ»';
-
-    const today = new Date().toISOString().split('T')[0];
-    const issueDateInput = document.getElementById('editIssueDate');
-    if (issueDateInput) issueDateInput.value = today;
-
-    const catSelect = document.getElementById('editCategory');
-    if (catSelect) catSelect.value = 'A';
+    document.getElementById('editPassId').value = res.id;
+    document.getElementById('editFullName').value = res.full_name || '';
+    document.getElementById('editIin').value = res.iin || '';
+    document.getElementById('editPosition').value = specs[res.position] || res.position || '';
+    document.getElementById('editOrganization').value = 'ТОО «КАЗФОСФАТ»';
+    document.getElementById('editIssueDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('editCategory').value = 'A';
 
     calculateExpiryPreview();
     document.getElementById('passEditModal')?.classList.remove('hidden');
@@ -296,26 +319,19 @@ function calculateExpiryPreview() {
     const issueDateVal = document.getElementById('editIssueDate')?.value;
     const category = document.getElementById('editCategory')?.value;
     const previewElem = document.getElementById('expiryPreviewText');
-
     if (!issueDateVal || !previewElem) return;
 
     const startDate = new Date(issueDateVal);
     const endDate = new Date(startDate);
-
-    if (category === 'A') {
-        endDate.setFullYear(endDate.getFullYear() + 1);
-    } else if (category === 'B') {
-        endDate.setMonth(endDate.getMonth() + 6);
-    } else if (category === 'C') {
-        endDate.setDate(endDate.getDate() + 1);
-    }
+    if (category === 'A') endDate.setFullYear(endDate.getFullYear() + 1);
+    else if (category === 'B') endDate.setMonth(endDate.getMonth() + 6);
+    else endDate.setDate(endDate.getDate() + 1);
 
     previewElem.innerText = endDate.toLocaleDateString('ru-RU');
 }
 
 async function savePassCard(e) {
     e.preventDefault();
-
     const passId = document.getElementById('editPassId')?.value;
     const payload = {
         full_name: document.getElementById('editFullName')?.value || '',
@@ -332,60 +348,43 @@ async function savePassCard(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
         const data = await response.json();
-
         if (response.ok) {
             closePassModal();
             showFinalBadge(data.card, passId);
-        } else {
-            alert('Ошибка сохранения: ' + (data.detail || 'Не удалось обновить'));
         }
     } catch (err) {
-        console.error(err);
         alert('Ошибка связи с сервером');
     }
 }
 
 function showFinalBadge(card, passId) {
     const res = globalResults.find(r => r.id == passId) || {};
+    const specs = getSpecialties();
     const badgeNum = String(card.id || passId).padStart(6, '0');
-
     const issueDate = card.issue_date ? new Date(card.issue_date) : new Date();
     const expiryDate = card.expiry_date ? new Date(card.expiry_date) : new Date();
 
     if (document.getElementById('badge-num')) document.getElementById('badge-num').innerText = badgeNum;
     if (document.getElementById('badge-fio')) document.getElementById('badge-fio').innerText = card.full_name || res.full_name || '—';
-    if (document.getElementById('badge-pos')) document.getElementById('badge-pos').innerText = card.position || positionNames[res.position] || res.position || '—';
+    if (document.getElementById('badge-pos')) document.getElementById('badge-pos').innerText = card.position || specs[res.position] || res.position || '—';
     if (document.getElementById('badge-organization')) document.getElementById('badge-organization').innerText = card.organization || 'ТОО «КАЗФОСФАТ»';
-
-    if (document.getElementById('badge-dates')) {
-        document.getElementById('badge-dates').innerHTML = `С ${issueDate.toLocaleDateString('ru-RU')}<br>ПО ${expiryDate.toLocaleDateString('ru-RU')}`;
-    }
+    if (document.getElementById('badge-dates')) document.getElementById('badge-dates').innerHTML = `С ${issueDate.toLocaleDateString('ru-RU')}<br>ПО ${expiryDate.toLocaleDateString('ru-RU')}`;
 
     const catTitle = document.getElementById('badge-category-title');
     const catSub = document.getElementById('badge-category-sub');
-
     if (catTitle && catSub) {
         if (card.category === 'B') {
-            catTitle.innerText = 'B';
-            catTitle.className = 'font-black text-3xl text-amber-600 block my-0.5';
-            catSub.innerText = 'ВРЕМЕННЫЙ';
+            catTitle.innerText = 'B'; catTitle.className = 'font-black text-3xl text-amber-600 block my-0.5'; catSub.innerText = 'ВРЕМЕННЫЙ';
         } else if (card.category === 'C') {
-            catTitle.innerText = 'C';
-            catTitle.className = 'font-black text-3xl text-blue-600 block my-0.5';
-            catSub.innerText = 'РАЗОВЫЙ';
+            catTitle.innerText = 'C'; catTitle.className = 'font-black text-3xl text-blue-600 block my-0.5'; catSub.innerText = 'РАЗОВЫЙ';
         } else {
-            catTitle.innerText = 'A';
-            catTitle.className = 'font-black text-3xl text-emerald-800 block my-0.5';
-            catSub.innerText = 'ПОСТОЯННЫЙ';
+            catTitle.innerText = 'A'; catTitle.className = 'font-black text-3xl text-emerald-800 block my-0.5'; catSub.innerText = 'ПОСТОЯННЫЙ';
         }
     }
 
     const photoElem = document.getElementById('badge-photo');
-    if (photoElem) {
-        photoElem.src = res.photo_user || `https://ui-avatars.com/api/?name=${encodeURIComponent(card.full_name || 'K')}&background=000&color=fff&size=200`;
-    }
+    if (photoElem) photoElem.src = res.photo_user || `https://ui-avatars.com/api/?name=${encodeURIComponent(card.full_name || 'K')}&background=000&color=fff&size=200`;
 
     document.getElementById('badge-modal')?.classList.remove('hidden');
 }
@@ -401,7 +400,6 @@ async function loadQuestionsList() {
     try {
         const response = await adminFetch('/api/admin/questions');
         const questions = await response.json();
-
         const tbody = document.getElementById('questions-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -411,27 +409,21 @@ async function loadQuestionsList() {
             return;
         }
 
+        const specs = getSpecialties();
         questions.forEach(q => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50 transition-colors";
-
             tr.innerHTML = `
                 <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${q.id}</td>
-                <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${positionNames[q.category] || q.category}</td>
+                <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${specs[q.category] || q.category}</td>
                 <td class="p-3 border-r border-slate-100">
                     <div class="font-bold text-slate-800 mb-0.5">${q.text_ru}</div>
                     <div class="text-slate-500 italic text-[11px]">${q.text_kk}</div>
                 </td>
-                <td class="p-3 border-r border-slate-100 text-slate-600 text-[11px]">
-                    ${Array.isArray(q.options_ru) ? q.options_ru.join(', ') : q.options_ru}
-                </td>
-                <td class="p-3 border-r border-slate-100 text-center font-extrabold text-emerald-700">
-                    ${q.correct_option_index}
-                </td>
+                <td class="p-3 border-r border-slate-100 text-slate-600 text-[11px]">${Array.isArray(q.options_ru) ? q.options_ru.join(', ') : q.options_ru}</td>
+                <td class="p-3 border-r border-slate-100 text-center font-extrabold text-emerald-700">${q.correct_option_index}</td>
                 <td class="p-3 text-center">
-                    <button onclick="deleteQuestion(${q.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">
-                        Удалить
-                    </button>
+                    <button onclick="deleteQuestion(${q.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -442,16 +434,11 @@ async function loadQuestionsList() {
 }
 
 async function deleteQuestion(id) {
-    if (!confirm("Удалить этот вопрос из базы данных?")) return;
-
+    if (!confirm("Удалить этот вопрос?")) return;
     try {
-        const response = await adminFetch(`/api/admin/questions/${id}`, {
-            method: 'DELETE'
-        });
+        const response = await adminFetch(`/api/admin/questions/${id}`, { method: 'DELETE' });
         const res = await response.json();
-        if (res.status === 'success') {
-            loadQuestionsList();
-        }
+        if (res.status === 'success') loadQuestionsList();
     } catch (err) {
         alert('Ошибка связи с сервером');
     }
@@ -459,21 +446,11 @@ async function deleteQuestion(id) {
 
 async function submitQuestion(e) {
     e.preventDefault();
-
     const category = document.getElementById('q_category')?.value.trim();
     const text_ru = document.getElementById('q_text_ru')?.value.trim();
     const text_kk = document.getElementById('q_text_kk')?.value.trim();
-    
-    const options_ru_arr = document.getElementById('q_options_ru')?.value
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-
-    const options_kk_arr = document.getElementById('q_options_kk')?.value
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-    
+    const options_ru_arr = document.getElementById('q_options_ru')?.value.split(',').map(s => s.trim()).filter(Boolean);
+    const options_kk_arr = document.getElementById('q_options_kk')?.value.split(',').map(s => s.trim()).filter(Boolean);
     const correct_idx = parseInt(document.getElementById('q_correct_idx')?.value, 10);
 
     const formData = new FormData();
@@ -485,14 +462,10 @@ async function submitQuestion(e) {
     formData.append('correct_option_index', correct_idx);
 
     try {
-        const response = await adminFetch('/api/admin/questions', {
-            method: 'POST',
-            body: formData
-        });
-
+        const response = await adminFetch('/api/admin/questions', { method: 'POST', body: formData });
         const res = await response.json();
         if (res.status === 'success') {
-            alert('Вопрос успешно сохранен в базу данных!');
+            alert('Вопрос успешно сохранен!');
             document.getElementById('add-question-form')?.reset();
             switchTab('questions_list');
         }
@@ -501,7 +474,7 @@ async function submitQuestion(e) {
     }
 }
 
-// Инициализация при загрузке страницы
+// Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
     populateCategorySelects();
     adminToken = localStorage.getItem('adminToken') || '';

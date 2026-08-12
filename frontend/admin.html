@@ -177,40 +177,44 @@
         </div>
 
         <!-- ВКЛАДКА УПРАВЛЕНИЯ СПЕЦИАЛЬНОСТЯМИ -->
-        <!-- ВКЛАДКА УПРАВЛЕНИЯ СПЕЦИАЛЬНОСТЯМИ -->
         <div id="tab-specialties" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-extrabold uppercase text-slate-800">Справочник специальностей и должностей</h2>
-                <p class="text-slate-500 text-[11px] mt-0.5">Все выбранные специальности автоматически синхронизируются с выпадающими списками в тестах и форме добавления вопросов.</p>
+            <div class="border-b border-slate-200 pb-3 flex justify-between items-center">
+                <div>
+                    <h2 class="text-sm font-extrabold uppercase text-slate-800">Управление специальностями</h2>
+                    <p class="text-slate-500 text-[11px] mt-0.5">Добавляйте, редактируйте или удаляйте должности. Изменения сразу применяются в тестах.</p>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="specialties-list-container">
-                <!-- Сюда динамически выводятся все специальности из словаря positionNames -->
-            </div>
-                        <label class="block text-xs font-semibold mb-1">Системный код (ID):</label>
-                        <input type="text" id="spec-key" required class="w-full p-2 border rounded kpp-input font-mono" placeholder="например: crane_operator">
+            <!-- Форма добавления/редактирования специальности -->
+            <form id="specialty-form" onsubmit="saveSpecialty(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 max-w-xl">
+                <input type="hidden" id="spec-old-key">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Системный код (ID, латиницей):</label>
+                        <input type="text" id="spec-key" required class="w-full p-2.5 kpp-input font-mono" placeholder="например: crane_operator">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold mb-1">Название специальности:</label>
-                        <input type="text" id="spec-name" required class="w-full p-2 border rounded kpp-input" placeholder="Машинист крана">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Название должности:</label>
+                        <input type="text" id="spec-name" required class="w-full p-2.5 kpp-input" placeholder="Машинист крана">
                     </div>
                 </div>
-                <div class="flex gap-2 justify-end">
-                    <button type="button" onclick="resetSpecForm()" class="px-4 py-1.5 border bg-white rounded font-medium text-xs">Сбросить</button>
-                    <button type="submit" id="spec-submit-btn" class="px-4 py-1.5 bg-slate-900 text-white font-bold rounded text-xs uppercase">Добавить специальность</button>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="resetSpecForm()" class="px-4 py-2 border bg-white rounded-lg font-bold text-xs">Сбросить</button>
+                    <button type="submit" id="spec-submit-btn" class="px-5 py-2 bg-[#002B49] text-white font-extrabold rounded-lg text-xs uppercase tracking-wider">Добавить специальность</button>
                 </div>
             </form>
 
+            <!-- Таблица списка специальностей -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-slate-100 font-bold uppercase border-b text-slate-700">
-                            <th class="p-2.5 w-40 border-r border-slate-200">Код (ID)</th>
-                            <th class="p-2.5 border-r border-slate-200">Наименование специальности</th>
-                            <th class="p-2.5 w-36 text-center">Действия</th>
+                        <tr class="bg-slate-100 font-extrabold uppercase border-b border-slate-200 text-slate-700">
+                            <th class="p-3 w-48 border-r border-slate-200">Системный код (ID)</th>
+                            <th class="p-3 border-r border-slate-200">Наименование специальности</th>
+                            <th class="p-3 w-36 text-center">Действия</th>
                         </tr>
                     </thead>
-                    <tbody id="specialties-table-body" class="divide-y divide-slate-200"></tbody>
+                    <tbody id="specialties-table-body" class="divide-y divide-slate-100 font-medium"></tbody>
                 </table>
             </div>
         </div>
@@ -230,8 +234,6 @@
 
             <!-- КАРТОЧКА БЕЙДЖА (В СИНИХ ТОНАХ) -->
             <div class="border-4 border-[#002B49] rounded-xl overflow-hidden bg-white text-black font-sans shadow-lg">
-                
-                <!-- 1. ШАПКА -->
                 <div class="bg-[#002B49] text-white px-4 py-3 flex justify-between items-center border-b-4 border-[#C8102E]">
                     <div class="flex items-center space-x-3">
                         <div class="w-12 h-12 bg-white rounded p-1 flex items-center justify-center shrink-0">
@@ -242,41 +244,25 @@
                             <p class="text-[10px] text-slate-200 uppercase mt-0.5 font-bold">ТОО «КАЗФОСФАТ»</p>
                         </div>
                     </div>
-
                     <div class="text-center">
                         <h1 class="font-black text-3xl tracking-widest text-white uppercase leading-none">ДОПУСК</h1>
-                        <p class="text-[9px] text-slate-200 uppercase font-bold tracking-tight mt-1">
-                            НА ПРАВО ВЪЕЗДА И ВЫПОЛНЕНИЯ РАБОТ<br>НА ТЕРРИТОРИИ КАРЬЕРА
-                        </p>
+                        <p class="text-[9px] text-slate-200 uppercase font-bold tracking-tight mt-1">НА ПРАВО ВЪЕЗДА И ВЫПОЛНЕНИЯ РАБОТ НА ТЕРРИТОРИИ КАРЬЕРА</p>
                     </div>
-
                     <div class="w-10 h-10 border-2 border-white rounded-full flex items-center justify-center text-white">
                         <span class="text-xl font-bold">✓</span>
                     </div>
                 </div>
 
-                <!-- 2. СРЕДНИЙ БЛОК -->
                 <div class="p-4 grid grid-cols-12 gap-4 border-b-2 border-[#002B49] items-stretch">
                     <div class="col-span-3 border-2 border-[#002B49] rounded-lg overflow-hidden bg-slate-100 aspect-[3/4] flex flex-col items-center justify-center relative">
                         <img id="badge-photo" src="" alt="ФОТО" class="w-full h-full object-cover">
                         <span class="absolute bottom-1 bg-[#002B49]/80 text-white text-[9px] font-bold px-2 py-0.5 rounded no-print">ФОТО</span>
                     </div>
-
                     <div class="col-span-5 space-y-2.5 justify-center flex flex-col pl-2">
-                        <div>
-                            <span class="text-[11px] font-extrabold text-[#002B49] uppercase block">Ф.И.О.:</span>
-                            <span id="badge-fio" class="font-black text-lg text-slate-900 uppercase leading-tight block"></span>
-                        </div>
-                        <div>
-                            <span class="text-[11px] font-extrabold text-[#002B49] uppercase block">ДОЛЖНОСТЬ:</span>
-                            <span id="badge-pos" class="font-black text-base text-slate-900 uppercase leading-tight block"></span>
-                        </div>
-                        <div>
-                            <span class="text-[11px] font-extrabold text-[#002B49] uppercase block">ОРГАНИЗАЦИЯ:</span>
-                            <span id="badge-organization" class="font-black text-base text-slate-900 uppercase leading-tight block">ТОО «КАЗФОСФАТ»</span>
-                        </div>
+                        <div><span class="text-[11px] font-extrabold text-[#002B49] uppercase block">Ф.И.О.:</span><span id="badge-fio" class="font-black text-lg text-slate-900 uppercase leading-tight block"></span></div>
+                        <div><span class="text-[11px] font-extrabold text-[#002B49] uppercase block">ДОЛЖНОСТЬ:</span><span id="badge-pos" class="font-black text-base text-slate-900 uppercase leading-tight block"></span></div>
+                        <div><span class="text-[11px] font-extrabold text-[#002B49] uppercase block">ОРГАНИЗАЦИЯ:</span><span id="badge-organization" class="font-black text-base text-slate-900 uppercase leading-tight block">ТОО «КАЗФОСФАТ»</span></div>
                     </div>
-
                     <div class="col-span-4 space-y-2 flex flex-col justify-between">
                         <div class="border-2 border-[#002B49] rounded-lg p-2 flex items-center justify-between bg-slate-50">
                             <span class="text-2xl">📅</span>
@@ -285,46 +271,24 @@
                                 <span id="badge-dates" class="font-black text-sm text-[#C8102E] block"></span>
                             </div>
                         </div>
-
                         <div class="border-2 border-[#002B49] rounded-lg p-2 text-center bg-slate-50 relative">
                             <span class="text-[9px] font-extrabold uppercase text-slate-600 block">КАТЕГОРИЯ ДОПУСКА</span>
                             <span id="badge-category-title" class="font-black text-3xl text-emerald-800 leading-none block my-0.5">A</span>
                             <span id="badge-category-sub" class="font-black text-xs uppercase block text-slate-900">ПОСТОЯННЫЙ</span>
                         </div>
-
                         <div class="border-2 border-[#002B49] rounded-lg p-1.5 text-center bg-white font-mono">
                             <span class="font-black text-lg text-[#C8102E]">№ <span id="badge-num">000001</span></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. НИЖНИЙ БЛОК -->
                 <div class="p-3.5 grid grid-cols-12 gap-4 text-xs leading-normal bg-white">
                     <div class="col-span-3 border-r-2 border-slate-200 pr-3 space-y-2">
                         <span class="font-black uppercase text-[#002B49] block text-center border-b-2 border-[#002B49] pb-1 text-[11px]">КАТЕГОРИИ ДОПУСКА</span>
-                        <div class="flex items-start space-x-2">
-                            <span class="bg-emerald-700 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">A</span>
-                            <div>
-                                <b class="text-slate-900 block font-extrabold text-[11px] leading-tight">ПОСТОЯННЫЙ</b>
-                                <span class="text-[10px] font-semibold text-slate-600 block leading-tight">Работникам ТОО «КАЗФОСФАТ». До 1 года.</span>
-                            </div>
-                        </div>
-                        <div class="flex items-start space-x-2">
-                            <span class="bg-amber-600 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">B</span>
-                            <div>
-                                <b class="text-slate-900 block font-extrabold text-[11px] leading-tight">ВРЕМЕННЫЙ</b>
-                                <span class="text-[10px] font-semibold text-slate-600 block leading-tight">Подрядным организациям. До 6 месяцев.</span>
-                            </div>
-                        </div>
-                        <div class="flex items-start space-x-2">
-                            <span class="bg-blue-700 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">C</span>
-                            <div>
-                                <b class="text-slate-900 block font-extrabold text-[11px] leading-tight">РАЗОВЫЙ</b>
-                                <span class="text-[10px] font-semibold text-slate-600 block leading-tight">Посетителям. До 24 часов.</span>
-                            </div>
-                        </div>
+                        <div class="flex items-start space-x-2"><span class="bg-emerald-700 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">A</span><div><b class="text-slate-900 block font-extrabold text-[11px] leading-tight">ПОСТОЯННЫЙ</b><span class="text-[10px] font-semibold text-slate-600 block leading-tight">Работникам ТОО «КАЗФОСФАТ». До 1 года.</span></div></div>
+                        <div class="flex items-start space-x-2"><span class="bg-amber-600 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">B</span><div><b class="text-slate-900 block font-extrabold text-[11px] leading-tight">ВРЕМЕННЫЙ</b><span class="text-[10px] font-semibold text-slate-600 block leading-tight">Подрядным организациям. До 6 месяцев.</span></div></div>
+                        <div class="flex items-start space-x-2"><span class="bg-blue-700 text-white font-black px-2 py-0.5 rounded text-xs shrink-0">C</span><div><b class="text-slate-900 block font-extrabold text-[11px] leading-tight">РАЗОВЫЙ</b><span class="text-[10px] font-semibold text-slate-600 block leading-tight">Посетителям. До 24 часов.</span></div></div>
                     </div>
-
                     <div class="col-span-5 border-r-2 border-slate-200 px-3 space-y-2">
                         <span class="font-black uppercase text-[#002B49] block text-center border-b-2 border-[#002B49] pb-1 text-[11px]">СТАТУС И УСЛОВИЯ ДОПУСКА</span>
                         <div class="flex items-center space-x-1.5 justify-center my-1 bg-emerald-50 py-1 rounded border border-emerald-200">
@@ -339,7 +303,6 @@
                             <li class="flex items-start"><span class="text-emerald-700 font-black mr-1.5">✓</span> <span>Работы разрешены по указанному виду работ</span></li>
                         </ul>
                     </div>
-
                     <div class="col-span-4 pl-2 space-y-2">
                         <span class="font-black uppercase text-[#002B49] block text-center border-b-2 border-[#002B49] pb-1 text-[11px]">ПРАВИЛА ПОВЕДЕНИЯ</span>
                         <ul class="space-y-1 text-[10.5px] font-extrabold text-slate-800">
@@ -352,13 +315,10 @@
                         </ul>
                     </div>
                 </div>
-
-                <!-- 4. БАННЕР -->
                 <div class="bg-[#002B49] text-white text-[11px] py-2 text-center font-black uppercase tracking-wider flex justify-center items-center gap-2 border-t-2 border-[#002B49]">
                     <span class="text-white text-base">🛡</span>
                     <span>БЕЗОПАСНОСТЬ – НАШ ПРИОРИТЕТ! СОБЛЮДАЙ ПРАВИЛА – СОХРАНИ ЖИЗНЬ!</span>
                 </div>
-
             </div>
         </div>
     </div>
@@ -370,20 +330,16 @@
                 <h3 class="text-lg font-bold text-slate-800">🪪 Редактирование карты допуска</h3>
                 <button onclick="closePassModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
             </div>
-
             <form id="passEditForm" onsubmit="savePassCard(event)" class="space-y-3">
                 <input type="hidden" id="editPassId">
-
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-semibold mb-1">Ф.И.О.:</label><input type="text" id="editFullName" required class="w-full p-2 border rounded kpp-input"></div>
                     <div><label class="block text-xs font-semibold mb-1">ИИН:</label><input type="text" id="editIin" class="w-full p-2 border rounded kpp-input"></div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-semibold mb-1">Должность:</label><input type="text" id="editPosition" required class="w-full p-2 border rounded kpp-input"></div>
                     <div><label class="block text-xs font-semibold mb-1">Организация:</label><input type="text" id="editOrganization" value="ТОО «КАЗФОСФАТ»" class="w-full p-2 border rounded kpp-input"></div>
                 </div>
-
                 <div class="bg-slate-50 p-3 rounded border border-slate-200 space-y-2">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -401,7 +357,6 @@
                     </div>
                     <div class="text-xs">Срок действия до: <strong id="expiryPreviewText" class="text-emerald-600">--.--.----</strong></div>
                 </div>
-
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closePassModal()" class="px-4 py-2 border bg-white rounded font-medium text-xs">Отмена</button>
                     <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs transition">Сохранить и Открыть допуск</button>
