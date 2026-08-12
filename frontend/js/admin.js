@@ -54,6 +54,20 @@ function showAdminApp() {
     document.getElementById('admin-app')?.classList.remove('hidden');
 }
 
+// Заполнение выпадающего списка специальностей
+function populateCategorySelects() {
+    const selectElem = document.getElementById('q_category');
+    if (!selectElem) return;
+
+    selectElem.innerHTML = '';
+    for (const [key, name] of Object.entries(positionNames)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = name;
+        selectElem.appendChild(option);
+    }
+}
+
 // ------------------------------------------------------------------
 // 1. АВТОРИЗАЦИЯ
 // ------------------------------------------------------------------
@@ -120,6 +134,7 @@ function switchTab(tab) {
     } else {
         document.getElementById('tab-add-question')?.classList.remove('hidden');
         if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = activeClass;
+        populateCategorySelects(); // Автозаполнение селекта при открытии вкладки
     }
 }
 
@@ -225,7 +240,6 @@ function openBadgeModal(index) {
     const res = globalResults[index];
     if (!res) return;
 
-    // Безопасное заполнение полей модального окна (даже если каких-то ID нет в HTML)
     const passIdInput = document.getElementById('editPassId');
     if (passIdInput) passIdInput.value = res.id;
 
@@ -467,6 +481,7 @@ async function submitQuestion(e) {
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
+    populateCategorySelects();
     adminToken = localStorage.getItem('adminToken') || '';
     if (adminToken) {
         try {
