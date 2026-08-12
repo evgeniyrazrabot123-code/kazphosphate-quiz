@@ -118,10 +118,12 @@ function switchTab(tab) {
     document.getElementById('tab-results')?.classList.add('hidden');
     document.getElementById('tab-questions-list')?.classList.add('hidden');
     document.getElementById('tab-add-question')?.classList.add('hidden');
+    document.getElementById('tab-specialties')?.classList.add('hidden');
 
     if (document.getElementById('tab-results-btn')) document.getElementById('tab-results-btn').className = inactiveClass;
     if (document.getElementById('tab-questions-list-btn')) document.getElementById('tab-questions-list-btn').className = inactiveClass;
     if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = inactiveClass;
+    if (document.getElementById('tab-specialties-btn')) document.getElementById('tab-specialties-btn').className = inactiveClass;
 
     if (tab === 'results') {
         document.getElementById('tab-results')?.classList.remove('hidden');
@@ -131,10 +133,30 @@ function switchTab(tab) {
         document.getElementById('tab-questions-list')?.classList.remove('hidden');
         if (document.getElementById('tab-questions-list-btn')) document.getElementById('tab-questions-list-btn').className = activeClass;
         loadQuestionsList();
-    } else {
+    } else if (tab === 'add_question') {
         document.getElementById('tab-add-question')?.classList.remove('hidden');
         if (document.getElementById('tab-add-question-btn')) document.getElementById('tab-add-question-btn').className = activeClass;
-        populateCategorySelects(); // Автозаполнение селекта при открытии вкладки
+        populateCategorySelects();
+    } else if (tab === 'specialties') {
+        document.getElementById('tab-specialties')?.classList.remove('hidden');
+        if (document.getElementById('tab-specialties-btn')) document.getElementById('tab-specialties-btn').className = activeClass;
+        renderSpecialtiesList();
+    }
+}
+
+function renderSpecialtiesList() {
+    const container = document.getElementById('specialties-list-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const [key, name] of Object.entries(positionNames)) {
+        const card = document.createElement('div');
+        card.className = "p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col justify-between space-y-1";
+        card.innerHTML = `
+            <span class="font-mono text-[10px] text-slate-400 uppercase">ID: ${key}</span>
+            <span class="font-bold text-slate-800 text-xs">${name}</span>
+        `;
+        container.appendChild(card);
     }
 }
 

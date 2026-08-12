@@ -177,16 +177,16 @@
         </div>
 
         <!-- ВКЛАДКА УПРАВЛЕНИЯ СПЕЦИАЛЬНОСТЯМИ -->
-        <div id="tab-specialties" class="hidden bg-white border rounded-md p-6 shadow-sm space-y-6">
-            <div class="border-b pb-3">
-                <h2 class="text-sm font-bold uppercase text-slate-800">Управление справочником специальностей</h2>
-                <p class="text-slate-500 text-[11px]">Добавляйте новые должности и категории, которые будут доступны при создании вопросов и формировании тестов.</p>
+        <!-- ВКЛАДКА УПРАВЛЕНИЯ СПЕЦИАЛЬНОСТЯМИ -->
+        <div id="tab-specialties" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+            <div class="border-b border-slate-200 pb-3">
+                <h2 class="text-sm font-extrabold uppercase text-slate-800">Справочник специальностей и должностей</h2>
+                <p class="text-slate-500 text-[11px] mt-0.5">Все выбранные специальности автоматически синхронизируются с выпадающими списками в тестах и форме добавления вопросов.</p>
             </div>
 
-            <form id="specialty-form" onsubmit="saveSpecialty(event)" class="max-w-xl bg-slate-50 p-4 rounded border border-slate-200 space-y-3">
-                <input type="hidden" id="spec-key-edit">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="specialties-list-container">
+                <!-- Сюда динамически выводятся все специальности из словаря positionNames -->
+            </div>
                         <label class="block text-xs font-semibold mb-1">Системный код (ID):</label>
                         <input type="text" id="spec-key" required class="w-full p-2 border rounded kpp-input font-mono" placeholder="например: crane_operator">
                     </div>
