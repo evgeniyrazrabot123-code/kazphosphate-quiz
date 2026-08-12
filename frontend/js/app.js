@@ -97,14 +97,25 @@ function populatePositionsList() {
     const selectElem = document.getElementById('position');
     if (!selectElem) return;
 
-    const specs = getSpecialties();
     selectElem.innerHTML = '';
-    for (const [key, name] of Object.entries(specs)) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = name;
-        selectElem.appendChild(option);
-    }
+
+    // Попытка загрузить специальности с сервера, если API доступен
+    fetch('/api/specialties').then(r => r.ok ? r.json() : Promise.reject()).then(specs => {
+        for (const [key, name] of Object.entries(specs)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = name;
+            selectElem.appendChild(option);
+        }
+    }).catch(() => {
+        const specs = getSpecialties();
+        for (const [key, name] of Object.entries(specs)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = name;
+            selectElem.appendChild(option);
+        }
+    });
 }
 
 // ЧИСТАЯ ФУНКЦИЯ ПЕРЕМЕШИВАНИЯ (Алгоритм Фишера-Йейтса)
