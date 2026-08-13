@@ -507,7 +507,30 @@ async function savePassCard(e) {
         const data = await response.json();
         if (response.ok) {
             closePassModal();
-            showFinalBadge(data.card, passId);
+            // If admin uploaded a photo file, send it to the server
+            const photoInput = document.getElementById('editPhoto');
+            if (photoInput && photoInput.files && photoInput.files.length > 0) {
+                try {
+                    const form = new FormData();
+                    form.append('photo', photoInput.files[0]);
+                    await adminFetch(`/api/admin/passes/${passId}/photo`, {
+                        method: 'POST',
+                        body: form
+                    });
+                } catch (phErr) {
+                    console.warn('Photo upload failed', phErr);
+                }
+                // Reload updated card
+                try {
+                    const r2 = await adminFetch(`/api/passes/${passId}`);
+                    const updated = await r2.json();
+                    showFinalBadge(updated, passId);
+                } catch (e2) {
+                    showFinalBadge(data.card, passId);
+                }
+            } else {
+                showFinalBadge(data.card, passId);
+            }
         }
     } catch (err) {
         alert('Ошибка связи с сервером');
@@ -540,7 +563,10 @@ function showFinalBadge(card, passId) {
     }
 
     const photoElem = document.getElementById('badge-photo');
-    if (photoElem) photoElem.src = res.photo_user || `https://ui-avatars.com/api/?name=${encodeURIComponent(card.full_name || 'K')}&background=000&color=fff&size=200`;
+    if (photoElem) {
+        const photoUrl = (card && card.photo_url) || res.photo_user || null;
+        photoElem.src = photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(card.full_name || 'K')}&background=000&color=fff&size=200`;
+    }
 
     document.getElementById('badge-modal')?.classList.remove('hidden');
 }

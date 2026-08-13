@@ -670,5 +670,29 @@ def update_pass_card(
             "category": card.category,
             "issue_date": card.issue_date.strftime("%Y-%m-%d") if card.issue_date else None,
             "expiry_date": card.expiry_date.strftime("%Y-%m-%d") if card.expiry_date else None,
+            "photo_url": card.photo_url,
         }
     }
+
+
+@app.post('/api/admin/passes/{pass_id}/photo')
+def upload_pass_photo(pass_id: int, request: Request, photo: UploadFile = File(None), db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    card = db.query(models.PassCard).filter(models.PassCard.id == pass_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail='Пропуск не найден')
+
+    if not photo or not getattr(photo, 'filename', None):
+        raise HTTPException(status_code=400, detail='No photo uploaded')
+
+    # save file
+    filename = f"pass_{pass_id}_photo_{uuid4().hex}{Path(photo.filename).suffix}"
+    target = UPLOAD_DIR / filename
+    with open(target, 'wb') as f:
+        shutil.copyfileobj(photo.file, f)
+
+    # update DB
+    card.photo_url = str(request.url_for('uploads', path=filename))
+    db.commit()
+    db.refresh(card)
+
+    return { 'status': 'success', 'photo_url': card.photo_url }
