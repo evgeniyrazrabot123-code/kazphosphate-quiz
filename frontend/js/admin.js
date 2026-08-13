@@ -1,6 +1,6 @@
 let globalResults = [];
 let adminToken = '';
-const API_BASE = ''; 
+const API_BASE = 'https://kazphosphate-quiz-1.onrender.com'; 
 
 const DEFAULT_SPECIALTIES = {
     'dumper': 'Водитель карьерного самосвала',
@@ -40,11 +40,15 @@ function saveSpecialties(specs) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(specs)
+        }).then(() => {
+            const ts = new Date().toLocaleTimeString();
+            setSyncStatus(`Синхронизировано: ${ts}`, true);
         }).catch(() => {
-            // Игнорируем ошибки синхронизации, данные уже сохранены в localStorage
+            setSyncStatus('Ошибка синхронизации', false);
         });
     }
 }
+
 
 const positionNames = new Proxy({}, {
     get(target, prop) {
@@ -73,6 +77,40 @@ function adminFetch(path, options = {}) {
     });
 }
 
+// Local-only write of specialties (no server sync)
+function setLocalSpecialties(specs) {
+    try {
+        localStorage.setItem('kpp_specialties', JSON.stringify(specs));
+    } catch (e) {
+        console.warn('setLocalSpecialties error', e);
+    }
+}
+
+function setSyncStatus(text, ok = true) {
+    const node = document.getElementById('sync-status');
+    if (!node) return;
+    node.innerText = text;
+    node.className = ok ? 'text-[12px] text-emerald-700 font-medium' : 'text-[12px] text-red-600 font-medium';
+}
+
+async function refreshSpecialtiesNow() {
+    setSyncStatus('Синхронизация...');
+    try {
+        const resp = await adminFetch('/api/admin/specialties');
+        const list = await resp.json();
+        const map = {};
+        list.forEach(s => { map[s.code] = s.name_ru; });
+        setLocalSpecialties(map);
+        populateCategorySelects();
+        renderSpecialtiesTable();
+        const ts = new Date().toLocaleTimeString();
+        setSyncStatus(`Синхронизировано: ${ts}`, true);
+    } catch (e) {
+        console.warn('refreshSpecialtiesNow error', e);
+        setSyncStatus('Ошибка синхронизации', false);
+    }
+}
+
 function showLoginScreen(message) {
     document.getElementById('admin-login-screen')?.classList.remove('hidden');
     document.getElementById('admin-app')?.classList.add('hidden');
@@ -89,17 +127,47 @@ function showAdminApp() {
 }
 
 function populateCategorySelects() {
-    const specs = getSpecialties();
     const selectElem = document.getElementById('q_category');
     if (!selectElem) return;
 
     selectElem.innerHTML = '';
-    for (const [key, name] of Object.entries(specs)) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = name;
-        selectElem.appendChild(option);
-    }
+
+    // Попробуем загрузить специальности с сервера (если доступен), иначе используем localStorage
+    const tryServer = () => {
+        return adminFetch('/api/admin/specialties').then(r => r.json()).then(list => {
+            // admin endpoint returns array of {code,name_ru}
+            list.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.code;
+                option.textContent = s.name_ru;
+                selectElem.appendChild(option);
+            });
+            return true;
+        }).catch(() => false);
+    };
+
+    // If adminToken present try admin endpoint, else try public /api/specialties
+    const serverPromise = adminToken ? tryServer() : fetch(`${API_BASE}/api/specialties`).then(r => r.ok ? r.json() : Promise.reject()).then(obj => {
+        for (const [key, name] of Object.entries(obj)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = name;
+            selectElem.appendChild(option);
+        }
+        return true;
+    }).catch(() => false);
+
+    serverPromise.then(success => {
+        if (!success) {
+            const specs = getSpecialties();
+            for (const [key, name] of Object.entries(specs)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = name;
+                selectElem.appendChild(option);
+            }
+        }
+    });
 }
 
 // ------------------------------------------------------------------
@@ -252,10 +320,12 @@ function saveSpecialty(e) {
         }).then(() => {
             resetSpecForm();
             renderSpecialtiesTable();
+            populateCategorySelects();
             alert('Специальность успешно сохранена на сервере!');
         }).catch(() => {
             resetSpecForm();
             renderSpecialtiesTable();
+            populateCategorySelects();
             alert('Специальность сохранена локально, но не удалось синхронизировать с сервером.');
         });
         return;
@@ -282,15 +352,19 @@ function deleteSpecialty(key) {
     if (adminToken) {
         adminFetch(`/api/admin/specialties/${encodeURIComponent(key)}`, { method: 'DELETE' }).then(() => {
             renderSpecialtiesTable();
+            populateCategorySelects();
+            const ts = new Date().toLocaleTimeString();
+            setSyncStatus(`Синхронизировано: ${ts}`, true);
         }).catch(() => {
             renderSpecialtiesTable();
+            populateCategorySelects();
+            setSyncStatus('Ошибка синхронизации', false);
             alert('Специальность удалена локально, но не удалось удалить на сервере.');
         });
         return;
     }
 
     renderSpecialtiesTable();
-}
 
 function resetSpecForm() {
     document.getElementById('specialty-form')?.reset();

@@ -37,7 +37,6 @@
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                color-adjust: exact !important;
             }
 
             body * { visibility: hidden; }
@@ -182,6 +181,10 @@
                 <div>
                     <h2 class="text-sm font-extrabold uppercase text-slate-800">Управление специальностями</h2>
                     <p class="text-slate-500 text-[11px] mt-0.5">Добавляйте, редактируйте или удаляйте должности. Изменения сразу применяются в тестах.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div id="sync-status" class="text-[12px] text-slate-500">Не синхронизировано</div>
+                    <button id="sync-now-btn" onclick="refreshSpecialtiesNow()" class="px-3 py-1 text-[12px] bg-white border rounded kpp-input">Обновить сейчас</button>
                 </div>
             </div>
 

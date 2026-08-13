@@ -100,7 +100,8 @@ function populatePositionsList() {
     selectElem.innerHTML = '';
 
     // Попытка загрузить специальности с сервера, если API доступен
-    fetch('/api/specialties').then(r => r.ok ? r.json() : Promise.reject()).then(specs => {
+    const API_BASE = 'https://kazphosphate-quiz-1.onrender.com';
+    fetch(`${API_BASE}/api/specialties`).then(r => r.ok ? r.json() : Promise.reject()).then(specs => {
         for (const [key, name] of Object.entries(specs)) {
             const option = document.createElement('option');
             option.value = key;
@@ -117,6 +118,12 @@ function populatePositionsList() {
         }
     });
 }
+
+// Автообновление списка специальностей каждые 15 секунд
+window.addEventListener('load', () => {
+    populatePositionsList();
+    setInterval(populatePositionsList, 15000);
+});
 
 // ЧИСТАЯ ФУНКЦИЯ ПЕРЕМЕШИВАНИЯ (Алгоритм Фишера-Йейтса)
 function shuffleArray(array) {
