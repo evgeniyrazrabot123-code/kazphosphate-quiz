@@ -29,6 +29,8 @@
             }
         }
     </script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0F1E36">
 
     <style>
         body { font-family: 'Open Sans', sans-serif; background-color: #F4F6F9; color: #1E293B; }
@@ -48,6 +50,11 @@
             <div class="flex items-center space-x-3">
                 <img src="images/logo.png" alt="Казфосфат" class="h-10 object-contain">
                 <span class="font-black text-xl text-[#0F1E36] tracking-widest uppercase">KAZPHOSPHATE</span>
+            </div>
+
+            <!-- PWA install / download button (replaces previous stepper) -->
+            <div class="flex items-center space-x-3">
+                <button id="btn-install" class="hidden px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all">Скачать</button>
             </div>
 
             <!-- КНОПКИ ПЕРЕКЛЮЧЕНИЯ ЯЗЫКОВ -->
@@ -304,6 +311,35 @@
         </footer>
     </div>
 
+    <script>
+        // Register service worker and handle PWA install
+        let deferredPrompt = null;
+        const installBtn = document.getElementById('btn-install');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) installBtn.classList.remove('hidden');
+        });
+
+        if (installBtn) installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                installBtn.classList.add('hidden');
+            } else {
+                // Fallback: open manifest location or show instructions
+                alert('Чтобы установить приложение на устройство, используйте меню браузера: «Установить приложение» (Install).');
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').then(() => {
+                console.log('Service Worker registered');
+            }).catch(err => console.warn('SW registration failed:', err));
+        }
+    </script>
     <script src="js/app.js?v=8"></script>
 </body>
 </html>

@@ -159,6 +159,22 @@ if (FRONTEND_DIR / "css").exists():
 if (FRONTEND_DIR / "images").exists():
     app.mount("/images", StaticFiles(directory=str(FRONTEND_DIR / "images")), name="images")
 
+# Serve PWA assets from frontend root (manifest and service worker)
+@app.get('/manifest.json')
+async def manifest():
+    mf = FRONTEND_DIR / 'manifest.json'
+    if not mf.exists():
+        raise HTTPException(status_code=404, detail='manifest not found')
+    return FileResponse(mf, media_type='application/manifest+json')
+
+
+@app.get('/service-worker.js')
+async def service_worker():
+    sw = FRONTEND_DIR / 'service-worker.js'
+    if not sw.exists():
+        raise HTTPException(status_code=404, detail='service-worker not found')
+    return FileResponse(sw, media_type='application/javascript')
+
 # =====================================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # =====================================================================
