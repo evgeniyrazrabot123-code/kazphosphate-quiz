@@ -366,6 +366,8 @@ function deleteSpecialty(key) {
 
     renderSpecialtiesTable();
 
+}
+
 function resetSpecForm() {
     document.getElementById('specialty-form')?.reset();
     document.getElementById('spec-old-key').value = '';
