@@ -175,12 +175,13 @@
                                 </div>
                             </div>
 
-                            <div class="border-2 border-dashed border-blue-300 rounded-lg p-3 text-center bg-white relative hover:bg-blue-50 transition cursor-pointer w-full sm:w-48 shrink-0">
-                                <input type="file" id="photo_license" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                                <span class="text-blue-600 text-lg block">☁</span>
-                                <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан права</span>
-                                <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
-                            </div>
+                            <div id="license-block" class="border-2 border-dashed border-blue-300 rounded-lg p-3 text-center bg-white relative hover:bg-blue-50 transition cursor-pointer w-full sm:w-48 shrink-0">
+                                    <input type="file" id="photo_license" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                                    <span class="text-blue-600 text-lg block">☁</span>
+                                    <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан права</span>
+                                    <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
+                                </div>
+                                <p id="license-error" class="hidden text-red-600 text-sm mt-2">Пожалуйста, загрузите скан водительского удостоверения.</p>
                         </div>
 
                         <!-- УДОСТОВЕРЕНИЕ МАШИНИСТА -->
@@ -202,12 +203,13 @@
                                 </div>
                             </div>
 
-                            <div class="border-2 border-dashed border-red-300 rounded-lg p-3 text-center bg-white relative hover:bg-red-50 transition cursor-pointer w-full sm:w-48 shrink-0">
+                            <div id="idcard-block" class="border-2 border-dashed border-red-300 rounded-lg p-3 text-center bg-white relative hover:bg-red-50 transition cursor-pointer w-full sm:w-48 shrink-0">
                                 <input type="file" id="photo_id_card" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
                                 <span class="text-red-600 text-lg block">☁</span>
                                 <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан удостоверения</span>
                                 <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
                             </div>
+                            <p id="idcard-error" class="hidden text-red-600 text-sm mt-2">Пожалуйста, загрузите скан удостоверения машиниста.</p>
                         </div>
 
                     </div>
@@ -229,7 +231,7 @@
                         <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
                             <!-- Камера -->
                             <div class="relative w-full sm:w-auto">
-                                <input type="file" id="photo_user_camera" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" onchange="if(this.files[0]) document.getElementById('photo_user').files = this.files;">
+                                <input type="file" id="photo_user_camera" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" onchange="copyCameraToGallery(this)">
                                 <button type="button" class="w-full sm:w-auto px-4 py-2.5 bg-kpp-red hover:bg-kpp-redHover text-white font-bold rounded-lg text-xs shadow-sm flex items-center justify-center space-x-2 transition">
                                     <span>📸</span>
                                     <span>Сделать фото</span>

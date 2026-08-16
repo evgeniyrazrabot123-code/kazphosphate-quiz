@@ -210,27 +210,52 @@ async function goToStep2() {
         return;
     }
 
-    // Require a 3x4 photo before proceeding to testing
+    // Require three mandatory files: photo_user (3x4), photo_license (driver's license), photo_id_card (machine certificate)
     const photoElem = document.getElementById('photo_user');
+    const licenseElem = document.getElementById('photo_license');
+    const idcardElem = document.getElementById('photo_id_card');
+
     const hasPhoto = photoElem && photoElem.files && photoElem.files.length > 0;
-    if (!hasPhoto) {
+    const hasLicense = licenseElem && licenseElem.files && licenseElem.files.length > 0;
+    const hasIdCard = idcardElem && idcardElem.files && idcardElem.files.length > 0;
+
+    if (!hasPhoto || !hasLicense || !hasIdCard) {
+        const msgs = [];
+        if (!hasPhoto) msgs.push(currentLang === 'ru' ? 'Фото 3x4' : '3x4 фотосурет');
+        if (!hasLicense) msgs.push(currentLang === 'ru' ? 'Водительское удостоверение' : 'Жүргізуші куәлігі');
+        if (!hasIdCard) msgs.push(currentLang === 'ru' ? 'Удостоверение машиниста' : 'Машинист куәлігі');
+
         const errMsg = currentLang === 'ru'
-            ? 'Пожалуйста, сделайте фото 3x4 или загрузите из галереи перед началом тестирования.'
-            : 'Өтініш, тестілеуді бастамас бұрын 3x4 фотосуретті түсіріңіз немесе галереядан жүктеңіз.';
+            ? `Пожалуйста, загрузите: ${msgs.join(', ')} перед началом тестирования.`
+            : `Өтініш, мына файлдарды жүктеңіз: ${msgs.join(', ')} тестілеуді бастамас бұрын.`;
+
         alert(errMsg);
-        // visual hint
-        const photoBlock = document.getElementById('photo-block');
-        const photoError = document.getElementById('photo-error');
-        if (photoBlock) photoBlock.classList.add('input-error');
-        if (photoError) {
-            photoError.innerText = errMsg;
-            photoError.classList.remove('hidden');
+
+        // Visual hints for each missing field
+        if (!hasPhoto) {
+            const photoBlock = document.getElementById('photo-block');
+            const photoError = document.getElementById('photo-error');
+            if (photoBlock) photoBlock.classList.add('input-error');
+            if (photoError) { photoError.innerText = currentLang === 'ru' ? 'Пожалуйста, загрузите фото 3x4.' : '3x4 фотосуретті жүктеңіз.'; photoError.classList.remove('hidden'); }
         }
-        // try to focus the photo input
-        if (photoElem) {
-            photoElem.focus();
-            photoElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!hasLicense) {
+            const licenseBlock = document.getElementById('license-block');
+            const licenseError = document.getElementById('license-error');
+            if (licenseBlock) licenseBlock.classList.add('input-error');
+            if (licenseError) { licenseError.classList.remove('hidden'); }
         }
+        if (!hasIdCard) {
+            const idcardBlock = document.getElementById('idcard-block');
+            const idcardError = document.getElementById('idcard-error');
+            if (idcardBlock) idcardBlock.classList.add('input-error');
+            if (idcardError) { idcardError.classList.remove('hidden'); }
+        }
+
+        // Scroll to the first missing
+        if (!hasPhoto && photoElem) { photoElem.scrollIntoView({ behavior: 'smooth', block: 'center' }); photoElem.focus(); }
+        else if (!hasLicense && licenseElem) { licenseElem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else if (!hasIdCard && idcardElem) { idcardElem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
         return;
     }
 
@@ -254,6 +279,45 @@ async function goToStep2() {
         if (photoError) photoError.classList.add('hidden');
     });
 });
+
+// Clear license/idcard error on change
+['photo_license', 'photo_id_card'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', (e) => {
+        if (id === 'photo_license') {
+            const licenseBlock = document.getElementById('license-block');
+            const licenseError = document.getElementById('license-error');
+            if (licenseBlock) licenseBlock.classList.remove('input-error');
+            if (licenseError) licenseError.classList.add('hidden');
+        }
+        if (id === 'photo_id_card') {
+            const idcardBlock = document.getElementById('idcard-block');
+            const idcardError = document.getElementById('idcard-error');
+            if (idcardBlock) idcardBlock.classList.remove('input-error');
+            if (idcardError) idcardError.classList.add('hidden');
+        }
+    });
+});
+
+// Copy camera-captured file into the gallery input so the same file is submitted
+function copyCameraToGallery(inputEl) {
+    try {
+        const f = inputEl.files && inputEl.files[0];
+        if (!f) return;
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        const gallery = document.getElementById('photo_user');
+        if (gallery) {
+            gallery.files = dt.files;
+            // trigger change so UI removes errors
+            const ev = new Event('change', { bubbles: true });
+            gallery.dispatchEvent(ev);
+        }
+    } catch (e) {
+        console.warn('copyCameraToGallery failed', e);
+    }
+}
 
 function goToStep1() {
     document.getElementById('step-2').classList.add('hidden');
