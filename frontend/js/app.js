@@ -210,6 +210,16 @@ async function goToStep2() {
         return;
     }
 
+    // Require a 3x4 photo before proceeding to testing
+    const photoElem = document.getElementById('photo_user');
+    const hasPhoto = photoElem && photoElem.files && photoElem.files.length > 0;
+    if (!hasPhoto) {
+        alert(currentLang === 'ru' ? 'Пожалуйста, сделайте фото 3x4 или загрузите из галереи перед началом тестирования.' : 'Өтініш, тестілеуді бастамас бұрын 3x4 фотосуретті түсіріңіз немесе галереядан жүктеңіз.');
+        // try to focus the photo button area
+        if (photoElem) photoElem.focus();
+        return;
+    }
+
     const loaded = await loadQuestions();
 
     if (loaded) {
