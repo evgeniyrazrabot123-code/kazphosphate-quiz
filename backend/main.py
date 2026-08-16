@@ -391,37 +391,66 @@ def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = De
     return {"status": "success", "message": "Запись успешно удалена"}
 
 @app.get("/api/admin/results/export/csv")
-def export_results_csv(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+def export_results_csv(request: Request, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
     results = db.query(models.TestResult).filter(getattr(models.TestResult, 'is_deleted', False) == False).all()
-    
+
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=';')
-    
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+
+    # Header with full employee + result info
     writer.writerow([
-        "ID", 
-        "Дата и время прохождения", 
-        "ФИО сотрудника", 
-        "Должность", 
-        "Дата рождения", 
-        "Балл", 
-        "Всего вопросов", 
-        "Процент"
+        "result_id",
+        "employee_id",
+        "passed_at",
+        "full_name",
+        "iin",
+        "birth_date",
+        "position",
+        "citizenship",
+        "phone",
+        "score",
+        "total_questions",
+        "percent",
+        "photo_user_url",
+        "photo_license_url",
+        "photo_id_card_url",
+        "is_deleted"
     ])
-    
+
     for r in results:
         emp = r.employee
+
+        photo_user_url = ''
+        photo_license_url = ''
+        photo_id_card_url = ''
+        if emp and emp.photo_user_path:
+            photo_user_url = str(request.url_for('uploads', path=Path(emp.photo_user_path).name))
+        if emp and emp.photo_license_path:
+            photo_license_url = str(request.url_for('uploads', path=Path(emp.photo_license_path).name))
+        if emp and getattr(emp, 'photo_id_card_path', None):
+            photo_id_card_url = str(request.url_for('uploads', path=Path(emp.photo_id_card_path).name))
+
         pct = round((r.score / r.total_questions * 100), 1) if r.total_questions > 0 else 0
+
         writer.writerow([
             r.id,
-            r.passed_at.strftime("%Y-%m-%d %H:%M") if r and r.passed_at else "—",
-            emp.full_name if emp else "—",
-            emp.position if emp else "—",
-            emp.birth_date if emp else "—",
+            emp.id if emp else '',
+            r.passed_at.strftime("%Y-%m-%d %H:%M") if r and r.passed_at else '',
+            emp.full_name if emp else '',
+            emp.iin if emp and getattr(emp, 'iin', None) else '',
+            emp.birth_date if emp else '',
+            emp.position if emp else '',
+            emp.citizenship if emp and getattr(emp, 'citizenship', None) else '',
+            emp.phone if emp and getattr(emp, 'phone', None) else '',
             r.score,
             r.total_questions,
-            f"{pct}%"
+            f"{pct}%",
+            photo_user_url,
+            photo_license_url,
+            photo_id_card_url,
+            'yes' if getattr(r, 'is_deleted', False) else 'no'
         ])
-    
+
     response = Response(content=output.getvalue().encode('utf-8-sig'), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=kazphosphate_results.csv"
     return response
