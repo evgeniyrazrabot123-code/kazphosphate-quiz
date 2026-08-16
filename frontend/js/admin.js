@@ -450,6 +450,23 @@ async function exportResultsCSV() {
     }
 }
 
+async function exportResultsXLSX() {
+    try {
+        const response = await adminFetch('/api/admin/results/export/xlsx');
+        if (!response.ok) throw new Error();
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `kazphosphate_results_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    } catch (err) {
+        alert('Не удалось выгрузить данные в Excel.');
+    }
+}
+
 function openBadgeModal(index) {
     const res = globalResults[index];
     if (!res) return;

@@ -8,6 +8,10 @@ from pathlib import Path
 from uuid import uuid4
 from datetime import date, datetime, timedelta
 from typing import Optional
+from io import BytesIO
+import openpyxl
+from openpyxl.styles import Font, Alignment
+from fastapi.responses import StreamingResponse
 
 from fastapi import FastAPI, Depends, UploadFile, File, Form, Response, HTTPException, Header, status, Request, Body
 from fastapi.staticfiles import StaticFiles
@@ -454,6 +458,86 @@ def export_results_csv(request: Request, db: Session = Depends(get_db), admin_au
     response = Response(content=output.getvalue().encode('utf-8-sig'), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=kazphosphate_results.csv"
     return response
+
+
+@app.get("/api/admin/results/export/xlsx")
+def export_results_xlsx(request: Request, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    results = db.query(models.TestResult).filter(getattr(models.TestResult, 'is_deleted', False) == False).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Results'
+
+    headers = [
+        'result_id', 'employee_id', 'passed_at', 'full_name', 'iin', 'birth_date', 'position', 'citizenship', 'phone',
+        'score', 'total_questions', 'percent', 'photo_user_url', 'photo_license_url', 'photo_id_card_url', 'is_deleted'
+    ]
+
+    # write header with bold
+    for col_idx, h in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+
+    row = 2
+    for r in results:
+        emp = r.employee
+        photo_user_url = ''
+        photo_license_url = ''
+        photo_id_card_url = ''
+        if emp and emp.photo_user_path:
+            photo_user_url = str(request.url_for('uploads', path=Path(emp.photo_user_path).name))
+        if emp and emp.photo_license_path:
+            photo_license_url = str(request.url_for('uploads', path=Path(emp.photo_license_path).name))
+        if emp and getattr(emp, 'photo_id_card_path', None):
+            photo_id_card_url = str(request.url_for('uploads', path=Path(emp.photo_id_card_path).name))
+
+        pct_value = (r.score / r.total_questions) if r.total_questions > 0 else 0
+
+        values = [
+            r.id,
+            emp.id if emp else None,
+            r.passed_at if r and r.passed_at else None,
+            emp.full_name if emp else '',
+            emp.iin if emp and getattr(emp, 'iin', None) else '',
+            emp.birth_date if emp else '',
+            emp.position if emp else '',
+            emp.citizenship if emp and getattr(emp, 'citizenship', None) else '',
+            emp.phone if emp and getattr(emp, 'phone', None) else '',
+            r.score,
+            r.total_questions,
+            pct_value,
+            photo_user_url,
+            photo_license_url,
+            photo_id_card_url,
+            'yes' if getattr(r, 'is_deleted', False) else 'no'
+        ]
+
+        for col_idx, val in enumerate(values, start=1):
+            cell = ws.cell(row=row, column=col_idx, value=val)
+            # percent formatting for the percent column (12th)
+            if col_idx == 12:
+                cell.number_format = '0.0%'
+            # date formatting for passed_at (3rd)
+            if col_idx == 3 and isinstance(val, datetime):
+                cell.number_format = 'YYYY-MM-DD HH:MM'
+        row += 1
+
+    # Set column widths for readability
+    widths = [12,12,20,30,15,14,25,14,15,8,14,10,40,40,40,10]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+
+    ws.auto_filter.ref = f"A1:{openpyxl.utils.get_column_letter(ws.max_column)}{ws.max_row}"
+
+    bio = BytesIO()
+    wb.save(bio)
+    bio.seek(0)
+
+    filename = f"kazphosphate_results_{datetime.utcnow().strftime('%Y%m%d')}.xlsx"
+    return StreamingResponse(bio, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={
+        'Content-Disposition': f'attachment; filename={filename}'
+    })
 
 # =====================================================================
 # API: СПЕЦИАЛЬНОСТИ
