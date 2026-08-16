@@ -214,9 +214,23 @@ async function goToStep2() {
     const photoElem = document.getElementById('photo_user');
     const hasPhoto = photoElem && photoElem.files && photoElem.files.length > 0;
     if (!hasPhoto) {
-        alert(currentLang === 'ru' ? 'Пожалуйста, сделайте фото 3x4 или загрузите из галереи перед началом тестирования.' : 'Өтініш, тестілеуді бастамас бұрын 3x4 фотосуретті түсіріңіз немесе галереядан жүктеңіз.');
-        // try to focus the photo button area
-        if (photoElem) photoElem.focus();
+        const errMsg = currentLang === 'ru'
+            ? 'Пожалуйста, сделайте фото 3x4 или загрузите из галереи перед началом тестирования.'
+            : 'Өтініш, тестілеуді бастамас бұрын 3x4 фотосуретті түсіріңіз немесе галереядан жүктеңіз.';
+        alert(errMsg);
+        // visual hint
+        const photoBlock = document.getElementById('photo-block');
+        const photoError = document.getElementById('photo-error');
+        if (photoBlock) photoBlock.classList.add('input-error');
+        if (photoError) {
+            photoError.innerText = errMsg;
+            photoError.classList.remove('hidden');
+        }
+        // try to focus the photo input
+        if (photoElem) {
+            photoElem.focus();
+            photoElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         return;
     }
 
@@ -228,6 +242,18 @@ async function goToStep2() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
+
+// Remove photo error hint when a photo is selected
+['photo_user', 'photo_user_camera'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+        const photoBlock = document.getElementById('photo-block');
+        const photoError = document.getElementById('photo-error');
+        if (photoBlock) photoBlock.classList.remove('input-error');
+        if (photoError) photoError.classList.add('hidden');
+    });
+});
 
 function goToStep1() {
     document.getElementById('step-2').classList.add('hidden');
