@@ -1,6 +1,9 @@
 let currentLang = 'ru';
 let loadedQuestions = [];
 let isSubmitting = false; // Блокировка от повторных кликов и дублей
+const TEST_DURATION_MS = 30 * 60 * 1000;
+let quizTimerInterval = null;
+let quizDeadline = null;
 
 // Дефолтные специальности ТОО «Казфосфат»
 const DEFAULT_SPECIALTIES = {
@@ -88,7 +91,51 @@ const translations = {
         resTitle: 'Тестирование сәтті өтті',
         resDesc: 'Мәліметтер «Қазфосфат» ЖШС біліктілік комиссиясының хаттамасында тіркелді.',
         btnRestart: 'Сессияны аяқтау',
-        sendingText: 'ЖІБЕРІЛУДЕ...'
+        sendingText: 'ЖІБЕРІЛУДЕ...',
+        licenseTitle: 'ЖҮРГІЗУШІ КУӘЛІГІ',
+        licenseCategoryLabel: 'САНАТТАР',
+        licenseFileLabel: 'Жүргізуші куәлігінің сканерін жүктеу',
+        idcardTitle: 'МАШИНИСТ КУӘЛІГІ',
+        idcardCategoryLabel: 'САНАТ',
+        idcardNumberLabel: 'НОМЕР',
+        idcardFileLabel: 'Куәліктің сканерін жүктеу',
+        photoTitle: 'ҚЫЗМЕТКЕРДІҢ ФОТОСЫ (3x4)',
+        photoDescription: 'Камерадан автопортрет алыңыз немесе галереядан фото жүктеңіз — анфас, бастың қақпағысыз, жақсы жарықта.',
+        photoCameraBtn: 'Фотосурет алу',
+        photoGalleryBtn: 'Галереядан'
+    },
+    ru: {
+        step1: 'Данные сотрудника',
+        step2: 'Тестирование',
+        step3: 'Результат',
+        instrTag: 'ИНСТРУКТАЖ ПО ТЕСТИРОВАНИЮ ПЕРСОНАЛА',
+        instrTitle: 'Цель и порядок проведения тестирования',
+        instrDesc: 'Настоящая проверка предназначена для подтверждения уровня профессиональной подготовки, допусков к работе на объектах повышенной опасности и знаний требований охраны труда ТОО «Казфосфат».',
+        sec1Title: '01. ДАННЫЕ СОТРУДНИКА',
+        lblFio: 'ФАМИЛИЯ, ИМЯ, ОТЧЕСТВО (ПОЛНОСТЬЮ)',
+        lblPhone: 'КОНТАКТНЫЙ ТЕЛЕФОН',
+        lblBirth: 'ДАТА РОЖДЕНИЯ',
+        lblCitizenship: 'ГРАЖДАНСТВО',
+        lblPos: 'СПЕЦИАЛЬНОСТЬ / ДОЛЖНОСТЬ',
+        btnNext: 'ПЕРЕЙТИ К ТЕСТИРОВАНИЮ →',
+        sec2Title: '02. ПРОВЕРКА ПРОФЕССИОНАЛЬНЫХ ЗНАНИЙ',
+        btnBack: '← НАЗАД',
+        btnSubmit: 'ПОДТВЕРДИТЬ И ОТПРАВИТЬ РЕЗУЛЬТАТЫ',
+        resTitle: 'Тестирование успешно пройдено',
+        resDesc: 'Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».',
+        btnRestart: 'Завершить сессию',
+        sendingText: 'ОТПРАВКА...',
+        licenseTitle: 'ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ',
+        licenseCategoryLabel: 'КАТЕГОРИИ',
+        licenseFileLabel: 'Загрузить скан права',
+        idcardTitle: 'УДОСТОВЕРЕНИЕ МАШИНИСТА',
+        idcardCategoryLabel: 'КАТЕГОРИЯ',
+        idcardNumberLabel: 'НОМЕР',
+        idcardFileLabel: 'Загрузить скан удостоверения',
+        photoTitle: 'ФОТО СОТРУДНИКА (3x4)',
+        photoDescription: 'Сделайте селфи на камеру или загрузите фото из галереи — анфас, без головного убора, при хорошем освещении.',
+        photoCameraBtn: 'Сделать фото',
+        photoGalleryBtn: 'Из галереи'
     }
 };
 
@@ -143,6 +190,8 @@ function setLanguage(lang) {
     const t = translations[lang];
     if (!t) return;
 
+    document.documentElement.lang = lang;
+
     if (document.getElementById('step-lbl-1')) document.getElementById('step-lbl-1').innerText = t.step1;
     if (document.getElementById('step-lbl-2')) document.getElementById('step-lbl-2').innerText = t.step2;
     if (document.getElementById('step-lbl-3')) document.getElementById('step-lbl-3').innerText = t.step3;
@@ -162,6 +211,17 @@ function setLanguage(lang) {
     if (document.getElementById('res-title')) document.getElementById('res-title').innerText = t.resTitle;
     if (document.getElementById('res-desc')) document.getElementById('res-desc').innerText = t.resDesc;
     if (document.getElementById('btn-restart')) document.getElementById('btn-restart').innerText = t.btnRestart;
+    if (document.getElementById('license-title')) document.getElementById('license-title').innerText = t.licenseTitle;
+    if (document.getElementById('license-category-label')) document.getElementById('license-category-label').innerText = t.licenseCategoryLabel;
+    if (document.getElementById('license-file-label')) document.getElementById('license-file-label').innerText = t.licenseFileLabel;
+    if (document.getElementById('idcard-title')) document.getElementById('idcard-title').innerText = t.idcardTitle;
+    if (document.getElementById('idcard-category-label')) document.getElementById('idcard-category-label').innerText = t.idcardCategoryLabel;
+    if (document.getElementById('idcard-number-label')) document.getElementById('idcard-number-label').innerText = t.idcardNumberLabel;
+    if (document.getElementById('idcard-file-label')) document.getElementById('idcard-file-label').innerText = t.idcardFileLabel;
+    if (document.getElementById('photo-title')) document.getElementById('photo-title').innerText = t.photoTitle;
+    if (document.getElementById('photo-description')) document.getElementById('photo-description').innerText = t.photoDescription;
+    if (document.getElementById('photo-camera-btn')) document.getElementById('photo-camera-btn').innerText = t.photoCameraBtn;
+    if (document.getElementById('photo-gallery-btn')) document.getElementById('photo-gallery-btn').innerText = t.photoGalleryBtn;
 
     const btnRu = document.getElementById('btn-ru');
     const btnKk = document.getElementById('btn-kk');
@@ -264,8 +324,47 @@ async function goToStep2() {
     if (loaded) {
         document.getElementById('step-1').classList.add('hidden');
         document.getElementById('step-2').classList.remove('hidden');
+        startQuizTimer();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+}
+
+function formatTimer(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function updateQuizTimer() {
+    const timerNode = document.getElementById('quiz-timer');
+    if (!timerNode || !quizDeadline) return;
+
+    const remaining = quizDeadline - Date.now();
+    if (remaining <= 0) {
+        timerNode.innerText = '00:00';
+        if (quizTimerInterval) {
+            clearInterval(quizTimerInterval);
+            quizTimerInterval = null;
+        }
+        if (!isSubmitting) {
+            alert(currentLang === 'ru' ? 'Время тестирования закончилось. Тест закрыт автоматически.' : 'Тест уақыты аяқталды. Тест автоматты түрде жабылды.');
+            handleFormSubmit(null, true);
+        }
+        return;
+    }
+
+    timerNode.innerText = formatTimer(remaining);
+}
+
+function startQuizTimer() {
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+    }
+
+    quizDeadline = Date.now() + TEST_DURATION_MS;
+    updateQuizTimer();
+    quizTimerInterval = setInterval(updateQuizTimer, 1000);
 }
 
 // Remove photo error hint when a photo is selected
@@ -322,6 +421,11 @@ function copyCameraToGallery(inputEl) {
 function goToStep1() {
     document.getElementById('step-2').classList.add('hidden');
     document.getElementById('step-1').classList.remove('hidden');
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+    }
+    quizDeadline = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -395,13 +499,19 @@ async function loadQuestions() {
 }
 
 // ОТПРАВКА ФОРМЫ
-async function handleFormSubmit(e) {
+async function handleFormSubmit(e, forceTimeout = false) {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
 
     if (isSubmitting) return;
+
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+    }
+    quizDeadline = null;
 
     const submitBtn = document.getElementById('btn-submit');
     const originalBtnText = submitBtn ? submitBtn.innerText : 'ОТПРАВИТЬ';
@@ -417,8 +527,15 @@ async function handleFormSubmit(e) {
         }
     });
 
-    if (Object.keys(userAnswers).length < cards.length) {
+    if (!forceTimeout && Object.keys(userAnswers).length < cards.length) {
         alert(currentLang === 'ru' ? "Пожалуйста, ответьте на все вопросы!" : "Өтініш, барлық сұрақтарға жауап беріңіз!");
+        if (quizTimerInterval) {
+            clearInterval(quizTimerInterval);
+            quizTimerInterval = null;
+        }
+        quizDeadline = Date.now() + TEST_DURATION_MS;
+        updateQuizTimer();
+        quizTimerInterval = setInterval(updateQuizTimer, 1000);
         return;
     }
 

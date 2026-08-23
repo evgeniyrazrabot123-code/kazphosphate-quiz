@@ -39,6 +39,7 @@
         .custom-radio:checked + label { border-color: #C8102E; background-color: #FFF5F5; }
         .custom-radio:checked + label .dot-outer { border-color: #C8102E; }
         .custom-radio:checked + label .dot-inner { background-color: #C8102E; transform: scale(1); }
+        .question-card, .question-card * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         /* Error outline for photo upload when required */
         .input-error { box-shadow: 0 0 0 3px rgba(200,16,46,0.08); border-color: #C8102E !important; }
     </style>
@@ -167,10 +168,10 @@
                             <div class="space-y-2 w-full sm:w-auto">
                                 <div class="flex items-center space-x-2 text-blue-900 font-bold text-xs uppercase">
                                     <span class="p-1.5 bg-blue-600 text-white rounded-md text-xs">🪪</span>
-                                    <span>ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ</span>
+                                    <span id="license-title">ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ</span>
                                 </div>
                                 <div>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase block">КАТЕГОРИИ</span>
+                                    <span id="license-category-label" class="text-[10px] font-bold text-slate-400 uppercase block">КАТЕГОРИИ</span>
                                     <input type="text" placeholder="B, C, CE" class="px-3 py-1 kpp-input w-full sm:w-36 text-xs mt-1">
                                 </div>
                             </div>
@@ -178,7 +179,7 @@
                             <div id="license-block" class="border-2 border-dashed border-blue-300 rounded-lg p-3 text-center bg-white relative hover:bg-blue-50 transition cursor-pointer w-full sm:w-48 shrink-0">
                                     <input type="file" id="photo_license" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
                                     <span class="text-blue-600 text-lg block">☁</span>
-                                    <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан права</span>
+                                    <span id="license-file-label" class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан права</span>
                                     <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
                                 </div>
                                 <p id="license-error" class="hidden text-red-600 text-sm mt-2">Пожалуйста, загрузите скан водительского удостоверения.</p>
@@ -189,15 +190,15 @@
                             <div class="space-y-2 w-full sm:w-auto">
                                 <div class="flex items-center space-x-2 text-red-900 font-bold text-xs uppercase">
                                     <span class="p-1.5 bg-red-600 text-white rounded-md text-xs">🚜</span>
-                                    <span>УДОСТОВЕРЕНИЕ МАШИНИСТА</span>
+                                    <span id="idcard-title">УДОСТОВЕРЕНИЕ МАШИНИСТА</span>
                                 </div>
                                 <div class="flex space-x-2">
                                     <div>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase block">КАТЕГОРИЯ</span>
+                                        <span id="idcard-category-label" class="text-[10px] font-bold text-slate-400 uppercase block">КАТЕГОРИЯ</span>
                                         <input type="text" placeholder="Машинист экскаватора" class="px-2 py-1 kpp-input w-32 text-[11px] mt-1">
                                     </div>
                                     <div>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase block">НОМЕР</span>
+                                        <span id="idcard-number-label" class="text-[10px] font-bold text-slate-400 uppercase block">НОМЕР</span>
                                         <input type="text" placeholder="Категория E" class="px-2 py-1 kpp-input w-24 text-[11px] mt-1">
                                     </div>
                                 </div>
@@ -206,7 +207,7 @@
                             <div id="idcard-block" class="border-2 border-dashed border-red-300 rounded-lg p-3 text-center bg-white relative hover:bg-red-50 transition cursor-pointer w-full sm:w-48 shrink-0">
                                 <input type="file" id="photo_id_card" accept="image/*,.pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
                                 <span class="text-red-600 text-lg block">☁</span>
-                                <span class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан удостоверения</span>
+                                <span id="idcard-file-label" class="text-[11px] font-bold text-slate-700 block mt-1">Загрузить скан удостоверения</span>
                                 <span class="text-[9px] text-slate-400 block">PDF, JPG, PNG до 10 МБ</span>
                             </div>
                             <p id="idcard-error" class="hidden text-red-600 text-sm mt-2">Пожалуйста, загрузите скан удостоверения машиниста.</p>
@@ -219,8 +220,8 @@
                         <div class="flex items-start space-x-3">
                             <span class="p-2.5 bg-slate-200 rounded-lg text-slate-700 text-lg">📷</span>
                             <div>
-                                <span class="font-bold text-slate-900 text-xs block uppercase">ФОТО СОТРУДНИКА (3x4)</span>
-                                <p class="text-xs text-slate-500 mt-0.5">
+                                <span id="photo-title" class="font-bold text-slate-900 text-xs block uppercase">ФОТО СОТРУДНИКА (3x4)</span>
+                                <p id="photo-description" class="text-xs text-slate-500 mt-0.5">
                                     Сделайте селфи на камеру или загрузите фото из галереи — анфас, без головного убора, при хорошем освещении.
                                 </p>
                             </div>
@@ -234,7 +235,7 @@
                                 <input type="file" id="photo_user_camera" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" onchange="copyCameraToGallery(this)">
                                 <button type="button" class="w-full sm:w-auto px-4 py-2.5 bg-kpp-red hover:bg-kpp-redHover text-white font-bold rounded-lg text-xs shadow-sm flex items-center justify-center space-x-2 transition">
                                     <span>📸</span>
-                                    <span>Сделать фото</span>
+                                    <span id="photo-camera-btn">Сделать фото</span>
                                 </button>
                             </div>
 
@@ -243,7 +244,7 @@
                                 <input type="file" id="photo_user" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
                                 <button type="button" class="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 rounded-lg font-bold text-xs text-slate-700 shadow-sm flex items-center justify-center space-x-2 hover:bg-slate-50 transition">
                                     <span>📁</span>
-                                    <span>Из галереи</span>
+                                    <span id="photo-gallery-btn">Из галереи</span>
                                 </button>
                             </div>
                         </div>
@@ -260,10 +261,13 @@
 
                 <!-- РАЗДЕЛ 2. ВОПРОСЫ ТЕСТА -->
                 <div id="step-2" class="hidden space-y-6">
-                    <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-3 gap-4">
                         <h2 id="sec2-title" class="text-sm font-extrabold text-slate-900 uppercase">
                             02. ПРОВЕРКА ПРОФЕССИОНАЛЬНЫХ ЗНАНИЙ
                         </h2>
+                        <div id="quiz-timer" class="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 font-extrabold text-xs uppercase tracking-wider shadow-sm">
+                            30:00
+                        </div>
                         <span class="text-xs font-bold text-slate-400 uppercase">Этап 2 из 2</span>
                     </div>
 
