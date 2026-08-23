@@ -69,7 +69,18 @@ const translations = {
         resTitle: 'Тестирование успешно пройдено',
         resDesc: 'Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».',
         btnRestart: 'Завершить сессию',
-        sendingText: 'ОТПРАВКА...'
+        sendingText: 'ОТПРАВКА...',
+        licenseTitle: 'ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ',
+        licenseCategoryLabel: 'КАТЕГОРИИ',
+        licenseFileLabel: 'Загрузить скан права',
+        idcardTitle: 'УДОСТОВЕРЕНИЕ МАШИНИСТА',
+        idcardCategoryLabel: 'КАТЕГОРИЯ',
+        idcardNumberLabel: 'НОМЕР',
+        idcardFileLabel: 'Загрузить скан удостоверения',
+        photoTitle: 'ФОТО СОТРУДНИКА (3x4)',
+        photoDescription: 'Сделайте селфи на камеру или загрузите фото из галереи — анфас, без головного убора, при хорошем освещении.',
+        photoCameraBtn: 'Сделать фото',
+        photoGalleryBtn: 'Из галереи'
     },
     kk: {
         step1: 'Қызметкер деректері',
@@ -103,39 +114,6 @@ const translations = {
         photoDescription: 'Камерадан автопортрет алыңыз немесе галереядан фото жүктеңіз — анфас, бастың қақпағысыз, жақсы жарықта.',
         photoCameraBtn: 'Фотосурет алу',
         photoGalleryBtn: 'Галереядан'
-    },
-    ru: {
-        step1: 'Данные сотрудника',
-        step2: 'Тестирование',
-        step3: 'Результат',
-        instrTag: 'ИНСТРУКТАЖ ПО ТЕСТИРОВАНИЮ ПЕРСОНАЛА',
-        instrTitle: 'Цель и порядок проведения тестирования',
-        instrDesc: 'Настоящая проверка предназначена для подтверждения уровня профессиональной подготовки, допусков к работе на объектах повышенной опасности и знаний требований охраны труда ТОО «Казфосфат».',
-        sec1Title: '01. ДАННЫЕ СОТРУДНИКА',
-        lblFio: 'ФАМИЛИЯ, ИМЯ, ОТЧЕСТВО (ПОЛНОСТЬЮ)',
-        lblPhone: 'КОНТАКТНЫЙ ТЕЛЕФОН',
-        lblBirth: 'ДАТА РОЖДЕНИЯ',
-        lblCitizenship: 'ГРАЖДАНСТВО',
-        lblPos: 'СПЕЦИАЛЬНОСТЬ / ДОЛЖНОСТЬ',
-        btnNext: 'ПЕРЕЙТИ К ТЕСТИРОВАНИЮ →',
-        sec2Title: '02. ПРОВЕРКА ПРОФЕССИОНАЛЬНЫХ ЗНАНИЙ',
-        btnBack: '← НАЗАД',
-        btnSubmit: 'ПОДТВЕРДИТЬ И ОТПРАВИТЬ РЕЗУЛЬТАТЫ',
-        resTitle: 'Тестирование успешно пройдено',
-        resDesc: 'Данные зарегистрированы в протоколе квалификационной комиссии ТОО «Казфосфат».',
-        btnRestart: 'Завершить сессию',
-        sendingText: 'ОТПРАВКА...',
-        licenseTitle: 'ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ',
-        licenseCategoryLabel: 'КАТЕГОРИИ',
-        licenseFileLabel: 'Загрузить скан права',
-        idcardTitle: 'УДОСТОВЕРЕНИЕ МАШИНИСТА',
-        idcardCategoryLabel: 'КАТЕГОРИЯ',
-        idcardNumberLabel: 'НОМЕР',
-        idcardFileLabel: 'Загрузить скан удостоверения',
-        photoTitle: 'ФОТО СОТРУДНИКА (3x4)',
-        photoDescription: 'Сделайте селфи на камеру или загрузите фото из галереи — анфас, без головного убора, при хорошем освещении.',
-        photoCameraBtn: 'Сделать фото',
-        photoGalleryBtn: 'Из галереи'
     }
 };
 
@@ -192,36 +170,41 @@ function setLanguage(lang) {
 
     document.documentElement.lang = lang;
 
-    if (document.getElementById('step-lbl-1')) document.getElementById('step-lbl-1').innerText = t.step1;
-    if (document.getElementById('step-lbl-2')) document.getElementById('step-lbl-2').innerText = t.step2;
-    if (document.getElementById('step-lbl-3')) document.getElementById('step-lbl-3').innerText = t.step3;
-    if (document.getElementById('instr-tag')) document.getElementById('instr-tag').innerText = t.instrTag;
-    if (document.getElementById('instr-title')) document.getElementById('instr-title').innerText = t.instrTitle;
-    if (document.getElementById('instr-desc')) document.getElementById('instr-desc').innerText = t.instrDesc;
-    if (document.getElementById('sec1-title')) document.getElementById('sec1-title').innerText = t.sec1Title;
-    if (document.getElementById('lbl-fio')) document.getElementById('lbl-fio').innerText = t.lblFio;
-    if (document.getElementById('lbl-phone')) document.getElementById('lbl-phone').innerText = t.lblPhone;
-    if (document.getElementById('lbl-birth')) document.getElementById('lbl-birth').innerText = t.lblBirth;
-    if (document.getElementById('lbl-citizenship')) document.getElementById('lbl-citizenship').innerText = t.lblCitizenship;
-    if (document.getElementById('lbl-pos')) document.getElementById('lbl-pos').innerText = t.lblPos;
-    if (document.getElementById('btn-next')) document.getElementById('btn-next').innerText = t.btnNext;
-    if (document.getElementById('sec2-title')) document.getElementById('sec2-title').innerText = t.sec2Title;
-    if (document.getElementById('btn-back')) document.getElementById('btn-back').innerText = t.btnBack;
-    if (document.getElementById('btn-submit')) document.getElementById('btn-submit').innerText = t.btnSubmit;
-    if (document.getElementById('res-title')) document.getElementById('res-title').innerText = t.resTitle;
-    if (document.getElementById('res-desc')) document.getElementById('res-desc').innerText = t.resDesc;
-    if (document.getElementById('btn-restart')) document.getElementById('btn-restart').innerText = t.btnRestart;
-    if (document.getElementById('license-title')) document.getElementById('license-title').innerText = t.licenseTitle;
-    if (document.getElementById('license-category-label')) document.getElementById('license-category-label').innerText = t.licenseCategoryLabel;
-    if (document.getElementById('license-file-label')) document.getElementById('license-file-label').innerText = t.licenseFileLabel;
-    if (document.getElementById('idcard-title')) document.getElementById('idcard-title').innerText = t.idcardTitle;
-    if (document.getElementById('idcard-category-label')) document.getElementById('idcard-category-label').innerText = t.idcardCategoryLabel;
-    if (document.getElementById('idcard-number-label')) document.getElementById('idcard-number-label').innerText = t.idcardNumberLabel;
-    if (document.getElementById('idcard-file-label')) document.getElementById('idcard-file-label').innerText = t.idcardFileLabel;
-    if (document.getElementById('photo-title')) document.getElementById('photo-title').innerText = t.photoTitle;
-    if (document.getElementById('photo-description')) document.getElementById('photo-description').innerText = t.photoDescription;
-    if (document.getElementById('photo-camera-btn')) document.getElementById('photo-camera-btn').innerText = t.photoCameraBtn;
-    if (document.getElementById('photo-gallery-btn')) document.getElementById('photo-gallery-btn').innerText = t.photoGalleryBtn;
+    const applyText = (id, value) => {
+        const node = document.getElementById(id);
+        if (node && value) node.textContent = value;
+    };
+
+    applyText('step-lbl-1', t.step1);
+    applyText('step-lbl-2', t.step2);
+    applyText('step-lbl-3', t.step3);
+    applyText('instr-tag', t.instrTag);
+    applyText('instr-title', t.instrTitle);
+    applyText('instr-desc', t.instrDesc);
+    applyText('sec1-title', t.sec1Title);
+    applyText('lbl-fio', t.lblFio);
+    applyText('lbl-phone', t.lblPhone);
+    applyText('lbl-birth', t.lblBirth);
+    applyText('lbl-citizenship', t.lblCitizenship);
+    applyText('lbl-pos', t.lblPos);
+    applyText('btn-next', t.btnNext);
+    applyText('sec2-title', t.sec2Title);
+    applyText('btn-back', t.btnBack);
+    applyText('btn-submit', t.btnSubmit);
+    applyText('res-title', t.resTitle);
+    applyText('res-desc', t.resDesc);
+    applyText('btn-restart', t.btnRestart);
+    applyText('license-title', t.licenseTitle);
+    applyText('license-category-label', t.licenseCategoryLabel);
+    applyText('license-file-label', t.licenseFileLabel);
+    applyText('idcard-title', t.idcardTitle);
+    applyText('idcard-category-label', t.idcardCategoryLabel);
+    applyText('idcard-number-label', t.idcardNumberLabel);
+    applyText('idcard-file-label', t.idcardFileLabel);
+    applyText('photo-title', t.photoTitle);
+    applyText('photo-description', t.photoDescription);
+    applyText('photo-camera-btn', t.photoCameraBtn);
+    applyText('photo-gallery-btn', t.photoGalleryBtn);
 
     const btnRu = document.getElementById('btn-ru');
     const btnKk = document.getElementById('btn-kk');
@@ -364,7 +347,7 @@ function startQuizTimer() {
 
     quizDeadline = Date.now() + TEST_DURATION_MS;
     updateQuizTimer();
-    quizTimerInterval = setInterval(updateQuizTimer, 1000);
+    quizTimerInterval = window.setInterval(updateQuizTimer, 1000);
 }
 
 // Remove photo error hint when a photo is selected
@@ -634,7 +617,8 @@ async function handleFormSubmit(e, forceTimeout = false) {
 
 // ИНИЦИАЛИЗАЦИЯ
 document.addEventListener('DOMContentLoaded', () => {
-    populatePositionsList(); // Заполняем специальности из localStorage при загрузке
+    setLanguage(currentLang);
+    populatePositionsList();
 
     const quizForm = document.getElementById('quiz-form');
     const nextButton = document.getElementById('btn-next');
