@@ -72,7 +72,7 @@ const translations = {
         sendingText: 'ОТПРАВКА...',
         licenseTitle: 'ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ',
         licenseCategoryLabel: 'КАТЕГОРИИ',
-        licenseFileLabel: 'Загрузить скан права',
+        licenseFileLabel: 'Загрузить водительское удостоверение',
         idcardTitle: 'УДОСТОВЕРЕНИЕ МАШИНИСТА',
         idcardCategoryLabel: 'КАТЕГОРИЯ',
         idcardNumberLabel: 'НОМЕР',
