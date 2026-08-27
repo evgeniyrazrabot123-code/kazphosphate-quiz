@@ -76,7 +76,7 @@ const translations = {
         idcardTitle: 'УДОСТОВЕРЕНИЕ МАШИНИСТА',
         idcardCategoryLabel: 'КАТЕГОРИЯ',
         idcardNumberLabel: 'НОМЕР',
-        idcardFileLabel: 'Загрузить скан удостоверения',
+        idcardFileLabel: 'Загрузить удостоверение машиниста',
         photoTitle: 'ФОТО СОТРУДНИКА (3x4)',
         photoDescription: 'Сделайте селфи на камеру или загрузите фото из галереи — анфас, без головного убора, при хорошем освещении.',
         photoCameraBtn: 'Сделать фото',
