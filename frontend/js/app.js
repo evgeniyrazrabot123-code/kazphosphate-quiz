@@ -227,7 +227,6 @@ async function goToStep2() {
     const fullName = document.getElementById('full_name')?.value.trim();
     const phone = document.getElementById('phone')?.value.trim();
     const birthDate = document.getElementById('birth_date')?.value;
-    const citizenship = document.getElementById('citizenship')?.value.trim();
 
     if (!fullName) {
         alert(currentLang === 'ru' ? 'Пожалуйста, введите ФИО полностью!' : 'Өтініш, Т.А.Ә. толық енгізіңіз!');
@@ -247,13 +246,6 @@ async function goToStep2() {
         return;
     }
 
-    if (!citizenship) {
-        alert(currentLang === 'ru' ? 'Пожалуйста, укажите ваше гражданство!' : 'Өтініш, азаматтығыңызды көрсетіңіз!');
-        document.getElementById('citizenship')?.focus();
-        return;
-    }
-
-    // Require three mandatory files: photo_user (3x4), photo_license (driver's license), photo_id_card (machine certificate)
     const photoElem = document.getElementById('photo_user');
     const licenseElem = document.getElementById('photo_license');
     const idcardElem = document.getElementById('photo_id_card');
@@ -261,12 +253,12 @@ async function goToStep2() {
     const hasPhoto = photoElem && photoElem.files && photoElem.files.length > 0;
     const hasLicense = licenseElem && licenseElem.files && licenseElem.files.length > 0;
     const hasIdCard = idcardElem && idcardElem.files && idcardElem.files.length > 0;
+    const hasAnyDocument = hasLicense || hasIdCard;
 
-    if (!hasPhoto || !hasLicense || !hasIdCard) {
+    if (!hasPhoto || !hasAnyDocument) {
         const msgs = [];
         if (!hasPhoto) msgs.push(currentLang === 'ru' ? 'Фото 3x4' : '3x4 фотосурет');
-        if (!hasLicense) msgs.push(currentLang === 'ru' ? 'Водительское удостоверение' : 'Жүргізуші куәлігі');
-        if (!hasIdCard) msgs.push(currentLang === 'ru' ? 'Удостоверение машиниста' : 'Машинист куәлігі');
+        if (!hasAnyDocument) msgs.push(currentLang === 'ru' ? 'хотя бы один документ' : 'кемінде бір құжат');
 
         const errMsg = currentLang === 'ru'
             ? `Пожалуйста, загрузите: ${msgs.join(', ')} перед началом тестирования.`
@@ -274,30 +266,37 @@ async function goToStep2() {
 
         alert(errMsg);
 
-        // Visual hints for each missing field
         if (!hasPhoto) {
             const photoBlock = document.getElementById('photo-block');
             const photoError = document.getElementById('photo-error');
             if (photoBlock) photoBlock.classList.add('input-error');
             if (photoError) { photoError.innerText = currentLang === 'ru' ? 'Пожалуйста, загрузите фото 3x4.' : '3x4 фотосуретті жүктеңіз.'; photoError.classList.remove('hidden'); }
         }
-        if (!hasLicense) {
+        if (!hasAnyDocument) {
             const licenseBlock = document.getElementById('license-block');
             const licenseError = document.getElementById('license-error');
-            if (licenseBlock) licenseBlock.classList.add('input-error');
-            if (licenseError) { licenseError.classList.remove('hidden'); }
-        }
-        if (!hasIdCard) {
             const idcardBlock = document.getElementById('idcard-block');
             const idcardError = document.getElementById('idcard-error');
+            if (licenseBlock) licenseBlock.classList.add('input-error');
             if (idcardBlock) idcardBlock.classList.add('input-error');
-            if (idcardError) { idcardError.classList.remove('hidden'); }
+            if (licenseError) {
+                licenseError.innerText = currentLang === 'ru'
+                    ? 'Пожалуйста, загрузите хотя бы один документ: водительское удостоверение или удостоверение машиниста.'
+                    : 'Өтініш, кемінде бір құжат жүктеңіз: жүргізуші куәлігі немесе машинист куәлігі.';
+                licenseError.classList.remove('hidden');
+            }
+            if (idcardError) {
+                idcardError.innerText = currentLang === 'ru'
+                    ? 'Пожалуйста, загрузите хотя бы один документ: водительское удостоверение или удостоверение машиниста.'
+                    : 'Өтініш, кемінде бір құжат жүктеңіз: жүргізуші куәлігі немесе машинист куәлігі.';
+                idcardError.classList.remove('hidden');
+            }
         }
 
-        // Scroll to the first missing
         if (!hasPhoto && photoElem) { photoElem.scrollIntoView({ behavior: 'smooth', block: 'center' }); photoElem.focus(); }
-        else if (!hasLicense && licenseElem) { licenseElem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-        else if (!hasIdCard && idcardElem) { idcardElem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else if (!hasAnyDocument) {
+            if (licenseElem) licenseElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         return;
     }
@@ -535,7 +534,6 @@ async function handleFormSubmit(e, forceTimeout = false) {
         formData.append('position', document.getElementById('position')?.value || '');
         formData.append('iin', document.getElementById('iin')?.value?.trim() || '');
         formData.append('phone', document.getElementById('phone')?.value.trim() || '');
-        formData.append('citizenship', document.getElementById('citizenship')?.value.trim() || '');
 
         const userPhoto = document.getElementById('photo_user')?.files[0];
         if (userPhoto) formData.append('photo_user', userPhoto);
