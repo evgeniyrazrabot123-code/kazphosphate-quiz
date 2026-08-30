@@ -670,22 +670,102 @@ async function deleteQuestion(id) {
     }
 }
 
+function addAnswerField(lang) {
+    const list = document.getElementById(`answer-list-${lang}`);
+    if (!list) return;
+
+    const items = [...list.querySelectorAll('.flex.items-center.gap-2')];
+    const nextIndex = items.length;
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2';
+    row.innerHTML = `
+        <input type="checkbox" class="q-correct-toggle" data-lang="${lang}" data-index="${nextIndex}">
+        <input type="text" data-answer="${lang}" data-index="${nextIndex}" class="flex-1 px-3 py-2 kpp-input" placeholder="${lang === 'ru' ? 'Ответ ' + (nextIndex + 1) : 'Жауап ' + (nextIndex + 1)}" required>
+        <button type="button" onclick="removeAnswerField(this, '${lang}')" class="px-2 py-1 text-[10px] bg-red-100 text-red-700 hover:bg-red-200 rounded font-bold">×</button>
+    `;
+    list.appendChild(row);
+}
+
+function removeAnswerField(button, lang) {
+    const row = button.closest('.flex.items-center.gap-2');
+    const list = document.getElementById(`answer-list-${lang}`);
+    if (!row || !list) return;
+
+    const rows = [...list.querySelectorAll('.flex.items-center.gap-2')];
+    if (rows.length <= 2) {
+        alert('Минимум два варианта ответа.');
+        return;
+    }
+
+    row.remove();
+    reindexAnswerFields(lang);
+}
+
+function reindexAnswerFields(lang) {
+    const rows = [...document.querySelectorAll(`#answer-list-${lang} .flex.items-center.gap-2`)]
+    rows.forEach((row, idx) => {
+        const checkbox = row.querySelector('.q-correct-toggle');
+        const input = row.querySelector('[data-answer]');
+        const button = row.querySelector('button');
+
+        if (checkbox) {
+            checkbox.dataset.index = idx;
+            checkbox.checked = checkbox.dataset.index === '0';
+        }
+        if (input) {
+            input.dataset.index = idx;
+            input.placeholder = lang === 'ru' ? `Ответ ${idx + 1}` : `Жауап ${idx + 1}`;
+        }
+        if (button) {
+            button.setAttribute('onclick', `removeAnswerField(this, '${lang}')`);
+        }
+    });
+}
+
+function getAnswerGroupsFromForm() {
+    const ruInputs = [...document.querySelectorAll('[data-answer="ru"]')].map(input => input.value.trim()).filter(Boolean);
+    const kkInputs = [...document.querySelectorAll('[data-answer="kk"]')].map(input => input.value.trim()).filter(Boolean);
+
+    const ruChecks = [...document.querySelectorAll('.q-correct-toggle[data-lang="ru"]')];
+    const kkChecks = [...document.querySelectorAll('.q-correct-toggle[data-lang="kk"]')];
+
+    const ruCorrectIndex = ruChecks.findIndex(cb => cb.checked);
+    const kkCorrectIndex = kkChecks.findIndex(cb => cb.checked);
+
+    if (ruInputs.length < 2 || kkInputs.length < 2) {
+        return null;
+    }
+
+    if (ruCorrectIndex === -1 || kkCorrectIndex === -1) {
+        return null;
+    }
+
+    return {
+        options_ru: ruInputs,
+        options_kk: kkInputs,
+        correct_option_index: ruCorrectIndex
+    };
+}
+
 async function submitQuestion(e) {
     e.preventDefault();
     const category = document.getElementById('q_category')?.value.trim();
     const text_ru = document.getElementById('q_text_ru')?.value.trim();
     const text_kk = document.getElementById('q_text_kk')?.value.trim();
-    const options_ru_arr = document.getElementById('q_options_ru')?.value.split(',').map(s => s.trim()).filter(Boolean);
-    const options_kk_arr = document.getElementById('q_options_kk')?.value.split(',').map(s => s.trim()).filter(Boolean);
-    const correct_idx = parseInt(document.getElementById('q_correct_idx')?.value, 10);
+
+    const answerData = getAnswerGroupsFromForm();
+    if (!answerData) {
+        alert('Заполните все варианты ответов и отметьте один правильный ответ для каждого языка.');
+        return;
+    }
 
     const formData = new FormData();
     formData.append('category', category);
     formData.append('text_ru', text_ru);
     formData.append('text_kk', text_kk);
-    formData.append('options_ru', JSON.stringify(options_ru_arr));
-    formData.append('options_kk', JSON.stringify(options_kk_arr));
-    formData.append('correct_option_index', correct_idx);
+    formData.append('options_ru', JSON.stringify(answerData.options_ru));
+    formData.append('options_kk', JSON.stringify(answerData.options_kk));
+    formData.append('correct_option_index', String(answerData.correct_option_index));
 
     try {
         const response = await adminFetch('/api/admin/questions', { method: 'POST', body: formData });
@@ -693,6 +773,10 @@ async function submitQuestion(e) {
         if (res.status === 'success') {
             alert('Вопрос успешно сохранен!');
             document.getElementById('add-question-form')?.reset();
+            const defaultRuChecked = document.querySelector('.q-correct-toggle[data-lang="ru"][data-index="0"]');
+            const defaultKkChecked = document.querySelector('.q-correct-toggle[data-lang="kk"][data-index="0"]');
+            if (defaultRuChecked) defaultRuChecked.checked = true;
+            if (defaultKkChecked) defaultKkChecked.checked = true;
             switchTab('questions_list');
         }
     } catch (err) {
