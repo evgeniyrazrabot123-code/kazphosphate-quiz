@@ -232,22 +232,39 @@ function switchTab(tab) {
 // ------------------------------------------------------------------
 // 3. УПРАВЛЕНИЕ СПЕЦИАЛЬНОСТЯМИ
 // ------------------------------------------------------------------
+function getSpecialtiesKk() {
+    const saved = localStorage.getItem('kpp_specialties_kk');
+    return saved ? JSON.parse(saved) : {};
+}
+
+function setSpecialtiesKk(specsKk) {
+    try {
+        localStorage.setItem('kpp_specialties_kk', JSON.stringify(specsKk));
+    } catch (e) {
+        console.warn('setSpecialtiesKk error', e);
+    }
+}
+
 function renderSpecialtiesTable() {
     // Если админ авторизован — попробуем загрузить с сервера
     const tbody = document.getElementById('specialties-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
 
+    const specsKk = getSpecialtiesKk();
+
     if (adminToken) {
         adminFetch('/api/admin/specialties').then(r => r.json()).then(list => {
             list.forEach(s => {
+                const kkName = s.name_kk || specsKk[s.code] || s.name_ru;
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
                     <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${s.code}</td>
                     <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${s.name_ru}</td>
+                    <td class="p-3 border-r border-slate-100 text-slate-700">${kkName}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="editSpecialty('${s.code}', '${s.name_ru}')" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
+                        <button onclick="editSpecialty('${s.code}', '${s.name_ru}', '${(kkName || '').replace(/'/g, "\\'")}' )" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
                         <button onclick="deleteSpecialty('${s.code}')" class="text-red-600 hover:underline font-bold text-xs">Удалить</button>
                     </td>
                 `;
@@ -258,11 +275,13 @@ function renderSpecialtiesTable() {
             for (const [key, name] of Object.entries(specs)) {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
+                const kkName = specsKk[key] || name;
                 tr.innerHTML = `
                     <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${key}</td>
                     <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${name}</td>
+                    <td class="p-3 border-r border-slate-100 text-slate-700">${kkName}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="editSpecialty('${key}', '${name}')" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
+                        <button onclick="editSpecialty('${key}', '${name}', '${(kkName || '').replace(/'/g, "\\'")}' )" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
                         <button onclick="deleteSpecialty('${key}')" class="text-red-600 hover:underline font-bold text-xs">Удалить</button>
                     </td>
                 `;
@@ -273,16 +292,16 @@ function renderSpecialtiesTable() {
     }
 
     const specs = getSpecialties();
-    if (!tbody) return;
-    tbody.innerHTML = '';
     for (const [key, name] of Object.entries(specs)) {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition-colors";
+        const kkName = specsKk[key] || name;
         tr.innerHTML = `
             <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${key}</td>
             <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${name}</td>
+            <td class="p-3 border-r border-slate-100 text-slate-700">${kkName}</td>
             <td class="p-3 text-center space-x-2">
-                <button onclick="editSpecialty('${key}', '${name}')" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
+                <button onclick="editSpecialty('${key}', '${name}', '${(kkName || '').replace(/'/g, "\\'")}' )" class="text-blue-600 hover:underline font-bold text-xs">Изменить</button>
                 <button onclick="deleteSpecialty('${key}')" class="text-red-600 hover:underline font-bold text-xs">Удалить</button>
             </td>
         `;
@@ -294,25 +313,32 @@ function saveSpecialty(e) {
     e.preventDefault();
     const keyInput = document.getElementById('spec-key');
     const nameInput = document.getElementById('spec-name');
+    const nameKkInput = document.getElementById('spec-name-kk');
     const oldKeyInput = document.getElementById('spec-old-key');
 
     const key = keyInput.value.trim().toLowerCase().replace(/\s+/g, '_');
     const name = nameInput.value.trim();
+    const nameKk = nameKkInput.value.trim();
     const oldKey = oldKeyInput.value.trim();
 
     let specs = getSpecialties();
+    let specsKk = getSpecialtiesKk();
 
     if (oldKey && oldKey !== key) {
         delete specs[oldKey];
+        delete specsKk[oldKey];
     }
 
     specs[key] = name;
+    specsKk[key] = nameKk || name;
     saveSpecialties(specs);
-    // Если админ — синхронизируем одиночную запись с сервером
+    setSpecialtiesKk(specsKk);
+
     if (adminToken) {
         const form = new URLSearchParams();
         form.append('code', key);
         form.append('name_ru', name);
+        form.append('name_kk', nameKk || name);
         adminFetch('/api/admin/specialties', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -336,9 +362,10 @@ function saveSpecialty(e) {
     alert('Специальность успешно сохранена!');
 }
 
-function editSpecialty(key, name) {
+function editSpecialty(key, name, nameKk = '') {
     document.getElementById('spec-key').value = key;
     document.getElementById('spec-name').value = name;
+    document.getElementById('spec-name-kk').value = nameKk || '';
     document.getElementById('spec-old-key').value = key;
     document.getElementById('spec-submit-btn').textContent = 'Сохранить изменения';
 }

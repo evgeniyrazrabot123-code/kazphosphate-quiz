@@ -29,10 +29,64 @@ const DEFAULT_SPECIALTIES = {
     'other': 'Другая должность'
 };
 
+const DEFAULT_SPECIALTIES_KK = {
+    'dumper': 'Карьерлік самосвал жүргізушісі',
+    'car_driver': 'Жеңіл автомобиль жүргізушісі',
+    'truck_driver': 'Жүк автомобилі жүргізушісі',
+    'bus_driver': 'Автобус жүргізушісі',
+    'trailer_driver': 'Тіркемесі бар автомобиль жүргізушісі',
+    'fuel_driver': 'Жанармай құятын жүргізуші',
+    'dopog_driver': 'Қауіпті жүк тасымалдаушы жүргізуші (ДОПОГ)',
+    'excavator': 'Экскаватор машинисі',
+    'loader': 'Фронтальды погрузчик машинисі',
+    'bulldozer': 'Бульдозер машинисі',
+    'grader': 'Автогрейдер машинисі',
+    'roller': 'Жол катогының машинисі',
+    'telehandler': 'Телескопиялық погрузчик машинисі',
+    'drilling_rig': 'Бұрғылау қондырғысының машинисі',
+    'operator': 'Технологиялық жабдық операторы',
+    'auto_mechanic': 'Автомобиль жөндеу слесары',
+    'machinery_mechanic': 'Өздігінен жүретін техниканы жөндеу слесары',
+    'mechanic': 'Учаске механигі',
+    'foreman': 'Учаске шебері',
+    'other': 'Басқа лауазым'
+};
+
+function translateSpecialtiesToKazakh(specs) {
+    const translated = {};
+    for (const [key, value] of Object.entries(specs || {})) {
+        translated[key] = DEFAULT_SPECIALTIES_KK[key] || value || DEFAULT_SPECIALTIES[key] || key;
+    }
+    return translated;
+}
+
 // Динамическое получение специальностей из localStorage (синхронизация с админкой)
-function getSpecialties() {
+function getSpecialties(lang = currentLang) {
     const saved = localStorage.getItem('kpp_specialties');
-    return saved ? JSON.parse(saved) : DEFAULT_SPECIALTIES;
+    const savedKk = localStorage.getItem('kpp_specialties_kk');
+
+    if (!saved) {
+        return lang === 'kk' ? DEFAULT_SPECIALTIES_KK : DEFAULT_SPECIALTIES;
+    }
+
+    try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            if (lang === 'kk') {
+                const kkParsed = savedKk ? JSON.parse(savedKk) : {};
+                const translated = {};
+                for (const [key, value] of Object.entries(parsed)) {
+                    translated[key] = kkParsed[key] || DEFAULT_SPECIALTIES_KK[key] || value;
+                }
+                return translated;
+            }
+            return parsed;
+        }
+    } catch (e) {
+        console.warn('getSpecialties parse error', e);
+    }
+
+    return lang === 'kk' ? DEFAULT_SPECIALTIES_KK : DEFAULT_SPECIALTIES;
 }
 
 const positionNames = new Proxy({}, {
@@ -122,23 +176,28 @@ function populatePositionsList() {
     const selectElem = document.getElementById('position');
     if (!selectElem) return;
 
+    const selectedValue = selectElem.value;
     selectElem.innerHTML = '';
 
-    // Попытка загрузить специальности с сервера, если API доступен
     const API_BASE = 'https://kazphosphate-quiz-1.onrender.com';
-    fetch(`${API_BASE}/api/specialties`).then(r => r.ok ? r.json() : Promise.reject()).then(specs => {
-        for (const [key, name] of Object.entries(specs)) {
+    fetch(`${API_BASE}/api/specialties?lang=${currentLang}`).then(r => r.ok ? r.json() : Promise.reject()).then(specs => {
+        for (const [key, name] of Object.entries(specs || {})) {
             const option = document.createElement('option');
             option.value = key;
             option.textContent = name;
+            if (selectedValue && selectedValue === key) option.selected = true;
             selectElem.appendChild(option);
         }
+        if (!selectedValue && selectElem.options.length > 0) {
+            selectElem.selectedIndex = 0;
+        }
     }).catch(() => {
-        const specs = getSpecialties();
+        const specs = getSpecialties(currentLang);
         for (const [key, name] of Object.entries(specs)) {
             const option = document.createElement('option');
             option.value = key;
             option.textContent = name;
+            if (selectedValue && selectedValue === key) option.selected = true;
             selectElem.appendChild(option);
         }
     });
@@ -216,6 +275,8 @@ function setLanguage(lang) {
             ? 'px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all'
             : 'px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-900 transition-all';
     }
+
+    populatePositionsList();
 
     if (document.getElementById('step-2') && !document.getElementById('step-2').classList.contains('hidden')) {
         loadQuestions();

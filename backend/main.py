@@ -543,18 +543,26 @@ def export_results_xlsx(request: Request, db: Session = Depends(get_db), admin_a
 # API: СПЕЦИАЛЬНОСТИ
 # =====================================================================
 @app.get('/api/specialties')
-def get_specialties(db: Session = Depends(get_db)):
+def get_specialties(lang: str = 'ru', db: Session = Depends(get_db)):
+    selected_lang = (lang or 'ru').lower()
     try:
         if hasattr(models, 'Specialty'):
             specs = db.query(models.Specialty).all()
             if specs:
-                return {s.code: s.name_ru for s in specs}
+                result = {}
+                for s in specs:
+                    value = s.name_kk if selected_lang == 'kk' and getattr(s, 'name_kk', None) else s.name_ru
+                    result[s.code] = value
+                return result
     except Exception:
         pass
 
     # Fallback to START_CATEGORIES
     if START_CATEGORIES:
-        return {code: name_ru for code, name_ru, _ in START_CATEGORIES}
+        result = {}
+        for code, name_ru, name_kk in START_CATEGORIES:
+            result[code] = name_kk if selected_lang == 'kk' and name_kk else name_ru
+        return result
     return {}
 
 
