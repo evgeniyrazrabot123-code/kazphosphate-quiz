@@ -270,18 +270,46 @@ def find_employee_by_phone(phone: str, db: Session):
 
 
 @app.post('/api/employee/register')
-def employee_register(phone: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def employee_register(
+    phone: str = Form(...),
+    password: str = Form(...),
+    full_name: str = Form(...),
+    birth_date: str = Form(...),
+    position: str = Form(...),
+    photo_user: UploadFile = File(None),
+    photo_license: UploadFile = File(None),
+    photo_id_card: UploadFile = File(None),
+    db: Session = Depends(get_db)
+):
     normalized_phone = phone.strip()
     if len(normalized_phone) < 7 or len(password) < 6:
         raise HTTPException(status_code=400, detail='Телефон должен содержать минимум 7 символов, пароль — минимум 6.')
     employee = find_employee_by_phone(normalized_phone, db)
     if employee and employee.password_hash:
         raise HTTPException(status_code=409, detail='Этот номер уже зарегистрирован. Выполните вход.')
+    user_photo_path = save_upload_file(photo_user)
+    license_photo_path = save_upload_file(photo_license)
+    id_card_photo_path = save_upload_file(photo_id_card)
     if not employee:
-        employee = models.Employee(phone=normalized_phone, password_hash=hash_employee_password(password))
+        employee = models.Employee(
+            phone=normalized_phone,
+            password_hash=hash_employee_password(password),
+            full_name=full_name.strip(),
+            birth_date=birth_date.strip(),
+            position=position.strip(),
+            photo_user_path=user_photo_path,
+            photo_license_path=license_photo_path,
+            photo_id_card_path=id_card_photo_path,
+        )
         db.add(employee)
     else:
         employee.password_hash = hash_employee_password(password)
+        employee.full_name = full_name.strip()
+        employee.birth_date = birth_date.strip()
+        employee.position = position.strip()
+        employee.photo_user_path = user_photo_path
+        employee.photo_license_path = license_photo_path
+        employee.photo_id_card_path = id_card_photo_path
     db.commit()
     db.refresh(employee)
     return {"employee_id": employee.id, "full_name": employee.full_name or ''}
@@ -537,13 +565,17 @@ def assign_test(employee_id: int = Form(...), category: str = Form(...), db: Ses
 
 
 @app.get('/api/admin/employees')
-def get_employees_admin(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+def get_employees_admin(request: Request, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
     employees = db.query(models.Employee).order_by(models.Employee.full_name.asc()).all()
     return [{
         "id": employee.id,
         "full_name": employee.full_name or 'Профиль не заполнен',
         "phone": employee.phone or '—',
-        "position": employee.position or ''
+        "birth_date": employee.birth_date or '—',
+        "position": employee.position or '',
+        "photo_user": str(request.url_for('uploads', path=Path(employee.photo_user_path).name)) if employee.photo_user_path else None,
+        "photo_license": str(request.url_for('uploads', path=Path(employee.photo_license_path).name)) if employee.photo_license_path else None,
+        "photo_id_card": str(request.url_for('uploads', path=Path(employee.photo_id_card_path).name)) if employee.photo_id_card_path else None
     } for employee in employees]
 
 @app.delete("/api/admin/results/{r_id}")

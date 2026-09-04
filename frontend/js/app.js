@@ -491,6 +491,7 @@ function openCabinetMode(mode) {
     toggle?.classList.remove('hidden');
     if (toggle) toggle.textContent = mode === 'login' ? 'Нет аккаунта? Зарегистрироваться' : 'Уже зарегистрированы? Войти';
     cabinet?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (mode === 'register') populateProfilePositions();
 }
 
 function logoutEmployee() {
@@ -501,6 +502,12 @@ function logoutEmployee() {
     document.getElementById('employee-register-form')?.classList.remove('hidden');
     document.getElementById('cabinet-mode-toggle').textContent = 'Уже зарегистрированы? Войти';
     document.getElementById('cabinet-mode-toggle')?.classList.remove('hidden');
+    const button = document.getElementById('btn-cabinet');
+    if (button) {
+        button.textContent = 'Войти';
+        button.onclick = () => openCabinetMode('login');
+    }
+    document.getElementById('btn-register')?.classList.remove('hidden');
 }
 
 function toggleCabinetMode() {
@@ -519,13 +526,23 @@ async function registerEmployee(event) {
     const password = document.getElementById('register-password')?.value;
     const errorNode = document.getElementById('cabinet-error');
     try {
-        const body = new URLSearchParams({ phone, password });
-        const response = await fetch('/api/employee/register', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+        const body = new FormData();
+        body.append('phone', phone);
+        body.append('password', password);
+        body.append('full_name', document.getElementById('register-full-name').value.trim());
+        body.append('birth_date', document.getElementById('register-birth-date').value);
+        body.append('position', document.getElementById('register-position').value);
+        ['register-photo-user', 'register-photo-license', 'register-photo-id-card'].forEach((id, index) => {
+            const file = document.getElementById(id)?.files[0];
+            if (file) body.append(['photo_user', 'photo_license', 'photo_id_card'][index], file);
+        });
+        const response = await fetch('/api/employee/register', { method: 'POST', body });
         if (!response.ok) throw new Error((await response.json()).detail || 'Не удалось зарегистрироваться');
         employeeCabinetCredentials = { phone, password };
         await loadEmployeeCabinet();
         document.getElementById('employee-register-form')?.classList.add('hidden');
         document.getElementById('cabinet-mode-toggle')?.classList.add('hidden');
+        updateCabinetHeader();
         errorNode?.classList.add('hidden');
     } catch (error) {
         if (errorNode) { errorNode.textContent = error.message; errorNode.classList.remove('hidden'); }
@@ -544,6 +561,7 @@ async function loginEmployee(event) {
         employeeCabinetCredentials = { phone, password };
         await loadEmployeeCabinet();
         document.getElementById('employee-login-form')?.classList.add('hidden');
+        updateCabinetHeader();
         errorNode?.classList.add('hidden');
     } catch (error) {
         if (errorNode) {
@@ -588,6 +606,17 @@ async function loadEmployeeCabinet() {
             <div class="text-right"><p class="font-extrabold ${result.passed ? 'text-emerald-700' : 'text-red-700'}">${result.score} / ${result.total_questions}</p><p class="text-[10px] font-bold ${result.passed ? 'text-emerald-700' : 'text-red-700'}">${result.passed ? 'ПРОЙДЕН' : 'НЕ ПРОЙДЕН'}</p></div>
         </div>`).join('') : '<p class="text-xs text-slate-500">История результатов пока пуста.</p>';
     document.getElementById('cabinet-content')?.classList.remove('hidden');
+    updateCabinetHeader(data.employee.full_name);
+}
+
+function updateCabinetHeader(fullName = '') {
+    const button = document.getElementById('btn-cabinet');
+    const registerButton = document.getElementById('btn-register');
+    if (button && employeeCabinetCredentials) {
+        button.textContent = fullName ? `Кабинет: ${fullName}` : 'Личный кабинет';
+        button.onclick = toggleEmployeeCabinet;
+    }
+    registerButton?.classList.toggle('hidden', Boolean(employeeCabinetCredentials));
 }
 
 function populateProfilePositions(selectedValue = '') {

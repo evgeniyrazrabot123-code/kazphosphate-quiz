@@ -470,8 +470,19 @@ async function loadAssignmentEmployees() {
         ]);
         const employees = await employeesResponse.json();
         const specialties = await specialtiesResponse.json();
-        employeeSelect.innerHTML = '<option value="">Выберите сотрудника</option>' + employees.map(employee => `<option value="${employee.id}">${employee.full_name} · ${employee.phone}</option>`).join('');
+        employeeSelect.innerHTML = '<option value="">Выберите сотрудника</option>' + employees.map(employee => `<option value="${employee.id}">${employee.full_name} · ${employee.phone} · ${employee.birth_date}</option>`).join('');
         categorySelect.innerHTML = specialties.map(specialty => `<option value="${specialty.code}">${specialty.name_ru}</option>`).join('');
+        const employeesBody = document.getElementById('employees-table-body');
+        if (employeesBody) {
+            employeesBody.innerHTML = employees.length ? employees.map(employee => {
+                const documents = [
+                    employee.photo_user && `<a href="${employee.photo_user}" target="_blank" class="text-blue-700 hover:underline font-bold">Фото</a>`,
+                    employee.photo_license && `<a href="${employee.photo_license}" target="_blank" class="text-blue-700 hover:underline font-bold">Права</a>`,
+                    employee.photo_id_card && `<a href="${employee.photo_id_card}" target="_blank" class="text-blue-700 hover:underline font-bold">Удостоверение</a>`
+                ].filter(Boolean).join(' · ') || '<span class="text-slate-400">Нет файлов</span>';
+                return `<tr class="hover:bg-slate-50"><td class="p-2.5 font-bold">${employee.full_name}</td><td class="p-2.5">${employee.phone}</td><td class="p-2.5">${employee.birth_date}</td><td class="p-2.5">${documents}</td></tr>`;
+            }).join('') : '<tr><td colspan="4" class="p-3 text-center text-slate-400">Сотрудники ещё не зарегистрированы</td></tr>';
+        }
     } catch (error) {
         console.error('Ошибка загрузки сотрудников для назначения:', error);
     }
