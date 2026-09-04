@@ -196,7 +196,7 @@ async function loginAdmin(e) {
         adminToken = data.token;
         localStorage.setItem('adminToken', adminToken);
         showAdminApp();
-        switchTab('results');
+        switchTab('dashboard');
     } catch (err) {
         if (errorNode) {
             errorNode.innerText = 'Неверный логин или пароль.';
@@ -212,7 +212,7 @@ function switchTab(tab) {
     const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition";
     const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-slate-900 bg-white border border-slate-300 text-xs uppercase tracking-wider transition";
 
-    ['results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
+    ['dashboard', 'results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
         document.getElementById(`tab-${t}`)?.classList.add('hidden');
         const btn = document.getElementById(`tab-${t}-btn`);
         if (btn) btn.className = inactiveClass;
@@ -223,7 +223,7 @@ function switchTab(tab) {
     const targetBtn = document.getElementById(`tab-${targetTabId}-btn`);
     if (targetBtn) targetBtn.className = activeClass;
 
-    if (tab === 'results') loadResults();
+    if (tab === 'dashboard' || tab === 'results') loadResults();
     else if (tab === 'questions_list') loadQuestionsList();
     else if (tab === 'add_question') populateCategorySelects();
     else if (tab === 'specialties') renderSpecialtiesTable();
@@ -870,7 +870,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await adminFetch('/api/admin/results');
             showAdminApp();
-            switchTab('results');
+            switchTab('dashboard');
             return;
         } catch (err) {
             localStorage.removeItem('adminToken');
