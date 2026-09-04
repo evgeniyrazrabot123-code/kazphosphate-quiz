@@ -459,12 +459,41 @@ function populateResultsSpecialtyFilter() {
     select.value = specialties.includes(selectedValue) ? selectedValue : '';
 }
 
+async function loadAssignmentEmployees() {
+    const employeeSelect = document.getElementById('assignment-employee');
+    const categorySelect = document.getElementById('assignment-category');
+    if (!employeeSelect || !categorySelect) return;
+    try {
+        const [employeesResponse, specialtiesResponse] = await Promise.all([
+            adminFetch('/api/admin/employees'),
+            adminFetch('/api/admin/specialties')
+        ]);
+        const employees = await employeesResponse.json();
+        const specialties = await specialtiesResponse.json();
+        employeeSelect.innerHTML = '<option value="">Выберите сотрудника</option>' + employees.map(employee => `<option value="${employee.id}">${employee.full_name} · ${employee.phone}</option>`).join('');
+        categorySelect.innerHTML = specialties.map(specialty => `<option value="${specialty.code}">${specialty.name_ru}</option>`).join('');
+    } catch (error) {
+        console.error('Ошибка загрузки сотрудников для назначения:', error);
+    }
+}
+
+async function assignSelectedTest() {
+    const employeeId = document.getElementById('assignment-employee')?.value;
+    const category = document.getElementById('assignment-category')?.value;
+    if (!employeeId || !category) {
+        alert('Выберите сотрудника и специальность.');
+        return;
+    }
+    await assignTest(employeeId, category);
+}
+
 async function loadResults() {
     try {
         const response = await adminFetch('/api/admin/results');
         globalResults = await response.json();
         updateResultsDashboard();
         populateResultsSpecialtyFilter();
+        loadAssignmentEmployees();
         renderResultsTable();
     } catch (err) {
         console.error("Ошибка загрузки результатов:", err);

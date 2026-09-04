@@ -29,6 +29,7 @@ class Employee(Base):
     position = Column(String)
     iin = Column(String, nullable=True)
     phone = Column(String, nullable=True)
+    password_hash = Column(String, nullable=True)
     citizenship = Column(String, nullable=True)
     
     photo_user_path = Column(String, nullable=True)

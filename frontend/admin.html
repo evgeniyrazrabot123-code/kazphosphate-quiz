@@ -159,6 +159,11 @@
                     </select>
                 </div>
             </div>
+            <div class="flex flex-col md:flex-row md:items-end gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <div class="flex-1"><label class="block text-[10px] font-extrabold uppercase text-amber-800 mb-1">Назначить тест зарегистрированному сотруднику</label><select id="assignment-employee" class="w-full px-3 py-2 kpp-input"><option value="">Выберите сотрудника</option></select></div>
+                <div><label class="block text-[10px] font-extrabold uppercase text-amber-800 mb-1">Специальность</label><select id="assignment-category" class="px-3 py-2 kpp-input"></select></div>
+                <button type="button" onclick="assignSelectedTest()" class="px-4 py-2.5 rounded-md bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-extrabold uppercase">Назначить тест</button>
+            </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">

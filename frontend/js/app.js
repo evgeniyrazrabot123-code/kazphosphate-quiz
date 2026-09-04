@@ -483,18 +483,49 @@ function logoutEmployee() {
     document.getElementById('cabinet-content')?.classList.add('hidden');
     document.getElementById('employee-login-form')?.classList.remove('hidden');
     document.getElementById('cabinet-error')?.classList.add('hidden');
+    document.getElementById('employee-register-form')?.classList.remove('hidden');
+    document.getElementById('cabinet-mode-toggle').textContent = 'Уже зарегистрированы? Войти';
+}
+
+function toggleCabinetMode() {
+    const registerForm = document.getElementById('employee-register-form');
+    const loginForm = document.getElementById('employee-login-form');
+    const toggle = document.getElementById('cabinet-mode-toggle');
+    const showingLogin = !loginForm?.classList.contains('hidden');
+    registerForm?.classList.toggle('hidden', showingLogin);
+    loginForm?.classList.toggle('hidden', !showingLogin);
+    if (toggle) toggle.textContent = showingLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже зарегистрированы? Войти';
+}
+
+async function registerEmployee(event) {
+    event.preventDefault();
+    const phone = document.getElementById('register-phone')?.value.trim();
+    const password = document.getElementById('register-password')?.value;
+    const errorNode = document.getElementById('cabinet-error');
+    try {
+        const body = new URLSearchParams({ phone, password });
+        const response = await fetch('/api/employee/register', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+        if (!response.ok) throw new Error((await response.json()).detail || 'Не удалось зарегистрироваться');
+        employeeCabinetCredentials = { phone, password };
+        await loadEmployeeCabinet();
+        document.getElementById('employee-register-form')?.classList.add('hidden');
+        document.getElementById('cabinet-mode-toggle')?.classList.add('hidden');
+        errorNode?.classList.add('hidden');
+    } catch (error) {
+        if (errorNode) { errorNode.textContent = error.message; errorNode.classList.remove('hidden'); }
+    }
 }
 
 async function loginEmployee(event) {
     event.preventDefault();
     const phone = document.getElementById('cabinet-phone')?.value.trim();
-    const birthDate = document.getElementById('cabinet-birth-date')?.value;
+    const password = document.getElementById('cabinet-password')?.value;
     const errorNode = document.getElementById('cabinet-error');
     try {
-        const body = new URLSearchParams({ phone, birth_date: birthDate });
+        const body = new URLSearchParams({ phone, password });
         const response = await fetch('/api/employee/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
         if (!response.ok) throw new Error((await response.json()).detail || 'Сотрудник не найден');
-        employeeCabinetCredentials = { phone, birthDate };
+        employeeCabinetCredentials = { phone, password };
         await loadEmployeeCabinet();
         document.getElementById('employee-login-form')?.classList.add('hidden');
         errorNode?.classList.add('hidden');
@@ -508,14 +539,17 @@ async function loginEmployee(event) {
 
 async function loadEmployeeCabinet() {
     if (!employeeCabinetCredentials) return;
-    const { phone, birthDate } = employeeCabinetCredentials;
-    const params = new URLSearchParams({ phone, birth_date: birthDate });
-    const response = await fetch(`/api/employee/cabinet?${params}`);
+    const { phone, password } = employeeCabinetCredentials;
+    const body = new URLSearchParams({ phone, password });
+    const response = await fetch('/api/employee/cabinet', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
     if (!response.ok) throw new Error('Не удалось загрузить кабинет');
     const data = await response.json();
 
     document.getElementById('cabinet-name').textContent = data.employee.full_name || '—';
-    document.getElementById('cabinet-position').textContent = getSpecialties()[data.employee.position] || data.employee.position || '—';
+    document.getElementById('cabinet-position').textContent = getSpecialties()[data.employee.position] || data.employee.position || 'Профиль не заполнен';
+    document.getElementById('profile-full-name').value = data.employee.full_name || '';
+    document.getElementById('profile-birth-date').value = data.employee.birth_date || '';
+    populateProfilePositions(data.employee.position);
     const assignmentsNode = document.getElementById('cabinet-assignments');
     const assignments = data.assignments || [];
     assignmentsNode.innerHTML = assignments.length ? assignments.map(assignment => `
@@ -534,15 +568,51 @@ async function loadEmployeeCabinet() {
     document.getElementById('cabinet-content')?.classList.remove('hidden');
 }
 
+function populateProfilePositions(selectedValue = '') {
+    const select = document.getElementById('profile-position');
+    if (!select) return;
+    const specialties = getSpecialties();
+    select.innerHTML = Object.entries(specialties).map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+    select.value = selectedValue || Object.keys(specialties)[0] || '';
+}
+
+async function saveEmployeeProfile(event) {
+    event.preventDefault();
+    if (!employeeCabinetCredentials) return;
+    const body = new URLSearchParams({
+        phone: employeeCabinetCredentials.phone,
+        password: employeeCabinetCredentials.password,
+        full_name: document.getElementById('profile-full-name').value.trim(),
+        birth_date: document.getElementById('profile-birth-date').value,
+        position: document.getElementById('profile-position').value
+    });
+    try {
+        const response = await fetch('/api/employee/profile', { method: 'PUT', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+        if (!response.ok) throw new Error((await response.json()).detail || 'Не удалось сохранить профиль');
+        await loadEmployeeCabinet();
+        alert('Профиль сохранён.');
+    } catch (error) {
+        const errorNode = document.getElementById('cabinet-error');
+        if (errorNode) { errorNode.textContent = error.message; errorNode.classList.remove('hidden'); }
+    }
+}
+
 async function startAssignedTest(category) {
     const position = document.getElementById('position');
     if (position) position.value = category;
     document.getElementById('employee-cabinet')?.classList.add('hidden');
     document.getElementById('quiz-form')?.classList.remove('hidden');
     document.getElementById('video-instruction-block')?.classList.remove('hidden');
-    document.getElementById('full_name').value = document.getElementById('cabinet-name').textContent;
+    const profileName = document.getElementById('profile-full-name')?.value.trim();
+    const profileBirthDate = document.getElementById('profile-birth-date')?.value;
+    if (!profileName || !profileBirthDate) {
+        alert('Сначала заполните и сохраните профиль сотрудника.');
+        document.getElementById('employee-profile-form')?.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+    document.getElementById('full_name').value = profileName;
     document.getElementById('phone').value = employeeCabinetCredentials.phone;
-    document.getElementById('birth_date').value = employeeCabinetCredentials.birthDate;
+    document.getElementById('birth_date').value = profileBirthDate;
     await goToStep2(true);
 }
 
@@ -669,6 +739,9 @@ async function handleFormSubmit(e, forceTimeout = false) {
         formData.append('position', document.getElementById('position')?.value || '');
         formData.append('iin', document.getElementById('iin')?.value?.trim() || '');
         formData.append('phone', document.getElementById('phone')?.value.trim() || '');
+        if (employeeCabinetCredentials?.password) {
+            formData.append('employee_password', employeeCabinetCredentials.password);
+        }
 
         const userPhoto = document.getElementById('photo_user')?.files[0];
         if (userPhoto) formData.append('photo_user', userPhoto);

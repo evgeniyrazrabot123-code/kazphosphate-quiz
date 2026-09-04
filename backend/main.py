@@ -4,6 +4,8 @@ import json
 import shutil
 import csv
 import io
+import hashlib
+import hmac
 from pathlib import Path
 from uuid import uuid4
 from datetime import date, datetime, timedelta
@@ -245,30 +247,59 @@ def get_questions(category: str, lang: str = "ru", db: Session = Depends(get_db)
     return result
 
 
-def find_employee_for_login(phone: str, birth_date: str, db: Session):
+def hash_employee_password(password: str) -> str:
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 120000)
+    return f'{salt.hex()}:{digest.hex()}'
+
+
+def verify_employee_password(password: str, stored_hash: str | None) -> bool:
+    try:
+        salt_hex, digest_hex = (stored_hash or '').split(':', 1)
+        expected = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), bytes.fromhex(salt_hex), 120000)
+        return hmac.compare_digest(expected.hex(), digest_hex)
+    except (ValueError, TypeError):
+        return False
+
+
+def find_employee_by_phone(phone: str, db: Session):
     normalized_phone = (phone or '').strip()
-    normalized_birth_date = (birth_date or '').strip()
-    if not normalized_phone or not normalized_birth_date:
+    if not normalized_phone:
         return None
-    return db.query(models.Employee).filter(
-        models.Employee.phone == normalized_phone,
-        models.Employee.birth_date == normalized_birth_date
-    ).order_by(models.Employee.id.desc()).first()
+    return db.query(models.Employee).filter(models.Employee.phone == normalized_phone).order_by(models.Employee.id.desc()).first()
+
+
+@app.post('/api/employee/register')
+def employee_register(phone: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    normalized_phone = phone.strip()
+    if len(normalized_phone) < 7 or len(password) < 6:
+        raise HTTPException(status_code=400, detail='Телефон должен содержать минимум 7 символов, пароль — минимум 6.')
+    employee = find_employee_by_phone(normalized_phone, db)
+    if employee and employee.password_hash:
+        raise HTTPException(status_code=409, detail='Этот номер уже зарегистрирован. Выполните вход.')
+    if not employee:
+        employee = models.Employee(phone=normalized_phone, password_hash=hash_employee_password(password))
+        db.add(employee)
+    else:
+        employee.password_hash = hash_employee_password(password)
+    db.commit()
+    db.refresh(employee)
+    return {"employee_id": employee.id, "full_name": employee.full_name or ''}
 
 
 @app.post('/api/employee/login')
-def employee_login(phone: str = Form(...), birth_date: str = Form(...), db: Session = Depends(get_db)):
-    employee = find_employee_for_login(phone, birth_date, db)
-    if not employee:
-        raise HTTPException(status_code=404, detail='Сотрудник не найден. Сначала пройдите регистрацию.')
+def employee_login(phone: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    employee = find_employee_by_phone(phone, db)
+    if not employee or not verify_employee_password(password, employee.password_hash):
+        raise HTTPException(status_code=401, detail='Неверный номер телефона или пароль.')
     return {"employee_id": employee.id, "full_name": employee.full_name}
 
 
-@app.get('/api/employee/cabinet')
-def employee_cabinet(phone: str, birth_date: str, db: Session = Depends(get_db)):
-    employee = find_employee_for_login(phone, birth_date, db)
-    if not employee:
-        raise HTTPException(status_code=404, detail='Сотрудник не найден')
+@app.post('/api/employee/cabinet')
+def employee_cabinet(phone: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    employee = find_employee_by_phone(phone, db)
+    if not employee or not verify_employee_password(password, employee.password_hash):
+        raise HTTPException(status_code=401, detail='Неверный номер телефона или пароль.')
 
     assignments = db.query(models.TestAssignment).filter(
         models.TestAssignment.employee_id == employee.id
@@ -301,6 +332,25 @@ def employee_cabinet(phone: str, birth_date: str, db: Session = Depends(get_db))
         } for result in results]
     }
 
+
+@app.put('/api/employee/profile')
+def update_employee_profile(
+    phone: str = Form(...),
+    password: str = Form(...),
+    full_name: str = Form(...),
+    birth_date: str = Form(...),
+    position: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    employee = find_employee_by_phone(phone, db)
+    if not employee or not verify_employee_password(password, employee.password_hash):
+        raise HTTPException(status_code=401, detail='Неверный номер телефона или пароль.')
+    employee.full_name = full_name.strip()
+    employee.birth_date = birth_date.strip()
+    employee.position = position.strip()
+    db.commit()
+    return {"status": "success"}
+
 @app.post("/api/submit")
 async def submit_quiz(
     full_name: str = Form(...),
@@ -309,6 +359,7 @@ async def submit_quiz(
     iin: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
     citizenship: Optional[str] = Form(None),
+    employee_password: Optional[str] = Form(None),
     answers: str = Form(...),
     photo_user: UploadFile = File(None),
     photo_license: UploadFile = File(None),
@@ -322,9 +373,20 @@ async def submit_quiz(
         id_card_photo_path = save_upload_file(photo_id_card)
 
         # 2. Создание карточки сотрудника
-        employee = find_employee_for_login(phone, birth_date, db)
+        employee = find_employee_by_phone(phone, db)
+        if employee and employee.password_hash:
+            if not employee_password or not verify_employee_password(employee_password, employee.password_hash):
+                raise HTTPException(status_code=401, detail='Необходимо войти в личный кабинет.')
+            active_assignment = db.query(models.TestAssignment).filter(
+                models.TestAssignment.employee_id == employee.id,
+                models.TestAssignment.category == position,
+                models.TestAssignment.status == 'assigned'
+            ).first()
+            if not active_assignment:
+                raise HTTPException(status_code=403, detail='Для этого сотрудника тест ещё не назначен руководителем.')
         if employee:
             employee.full_name = full_name.strip() if full_name else employee.full_name
+            employee.birth_date = birth_date or employee.birth_date
             employee.position = position
             if user_photo_path:
                 employee.photo_user_path = user_photo_path
@@ -402,6 +464,9 @@ async def submit_quiz(
             "details": details
         }
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         print(f"❌ ОШИБКА ПРИ СОХРАНЕНИИ ТЕСТА: {e}")
@@ -464,6 +529,17 @@ def assign_test(employee_id: int = Form(...), category: str = Form(...), db: Ses
     db.add(assignment)
     db.commit()
     return {"status": "success", "assignment_id": assignment.id}
+
+
+@app.get('/api/admin/employees')
+def get_employees_admin(db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    employees = db.query(models.Employee).order_by(models.Employee.full_name.asc()).all()
+    return [{
+        "id": employee.id,
+        "full_name": employee.full_name or 'Профиль не заполнен',
+        "phone": employee.phone or '—',
+        "position": employee.position or ''
+    } for employee in employees]
 
 @app.delete("/api/admin/results/{r_id}")
 def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
