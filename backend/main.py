@@ -377,13 +377,18 @@ async def submit_quiz(
         if employee and employee.password_hash:
             if not employee_password or not verify_employee_password(employee_password, employee.password_hash):
                 raise HTTPException(status_code=401, detail='Необходимо войти в личный кабинет.')
-            active_assignment = db.query(models.TestAssignment).filter(
-                models.TestAssignment.employee_id == employee.id,
-                models.TestAssignment.category == position,
-                models.TestAssignment.status == 'assigned'
-            ).first()
-            if not active_assignment:
-                raise HTTPException(status_code=403, detail='Для этого сотрудника тест ещё не назначен руководителем.')
+            previous_attempts = db.query(models.TestResult).filter(
+                    models.TestResult.employee_id == employee.id,
+                    models.TestResult.is_deleted == False
+            ).count()
+            if previous_attempts > 0:
+                active_assignment = db.query(models.TestAssignment).filter(
+                    models.TestAssignment.employee_id == employee.id,
+                    models.TestAssignment.category == position,
+                    models.TestAssignment.status == 'assigned'
+                ).first()
+                if not active_assignment:
+                    raise HTTPException(status_code=403, detail='Следующий тест должен быть назначен руководителем.')
         if employee:
             employee.full_name = full_name.strip() if full_name else employee.full_name
             employee.birth_date = birth_date or employee.birth_date

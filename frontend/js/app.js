@@ -478,6 +478,21 @@ function toggleEmployeeCabinet() {
     document.getElementById('employee-cabinet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function openCabinetMode(mode) {
+    const cabinet = document.getElementById('employee-cabinet');
+    const registerForm = document.getElementById('employee-register-form');
+    const loginForm = document.getElementById('employee-login-form');
+    const toggle = document.getElementById('cabinet-mode-toggle');
+    const content = document.getElementById('cabinet-content');
+    cabinet?.classList.remove('hidden');
+    content?.classList.add('hidden');
+    registerForm?.classList.toggle('hidden', mode !== 'register');
+    loginForm?.classList.toggle('hidden', mode !== 'login');
+    toggle?.classList.remove('hidden');
+    if (toggle) toggle.textContent = mode === 'login' ? 'Нет аккаунта? Зарегистрироваться' : 'Уже зарегистрированы? Войти';
+    cabinet?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function logoutEmployee() {
     employeeCabinetCredentials = null;
     document.getElementById('cabinet-content')?.classList.add('hidden');
@@ -485,6 +500,7 @@ function logoutEmployee() {
     document.getElementById('cabinet-error')?.classList.add('hidden');
     document.getElementById('employee-register-form')?.classList.remove('hidden');
     document.getElementById('cabinet-mode-toggle').textContent = 'Уже зарегистрированы? Войти';
+    document.getElementById('cabinet-mode-toggle')?.classList.remove('hidden');
 }
 
 function toggleCabinetMode() {
@@ -552,11 +568,17 @@ async function loadEmployeeCabinet() {
     populateProfilePositions(data.employee.position);
     const assignmentsNode = document.getElementById('cabinet-assignments');
     const assignments = data.assignments || [];
-    assignmentsNode.innerHTML = assignments.length ? assignments.map(assignment => `
+    const firstTestAvailable = !data.results?.length && data.employee.full_name && data.employee.birth_date && data.employee.position;
+    const firstTestCard = firstTestAvailable ? `
+        <div class="border border-emerald-200 bg-emerald-50 rounded-xl p-3 flex items-center justify-between gap-3">
+            <div><p class="font-bold text-slate-900">Первичное тестирование</p><p class="text-[10px] text-slate-500">Доступно сразу после регистрации</p></div>
+            <button type="button" onclick="startAssignedTest('${data.employee.position}')" class="px-3 py-2 rounded-md bg-emerald-700 text-white text-[10px] font-extrabold uppercase">Пройти тест</button>
+        </div>` : '';
+    assignmentsNode.innerHTML = firstTestCard + (assignments.length ? assignments.map(assignment => `
         <div class="border border-amber-200 bg-amber-50 rounded-xl p-3 flex items-center justify-between gap-3">
             <div><p class="font-bold text-slate-900">Тест по специальности</p><p class="text-[10px] text-slate-500">Назначен: ${assignment.assigned_at}</p></div>
             ${assignment.status === 'assigned' ? `<button type="button" onclick="startAssignedTest('${assignment.category}')" class="px-3 py-2 rounded-md bg-kpp-red text-white text-[10px] font-extrabold uppercase">Пройти</button>` : '<span class="text-[10px] font-bold text-emerald-700">Выполнен</span>'}
-        </div>`).join('') : '<p class="text-xs text-slate-500">Новых назначений пока нет.</p>';
+        </div>`).join('') : (firstTestCard ? '' : '<p class="text-xs text-slate-500">Новых назначений пока нет.</p>'));
 
     const resultsNode = document.getElementById('cabinet-results');
     const results = data.results || [];
@@ -601,6 +623,7 @@ async function startAssignedTest(category) {
     const position = document.getElementById('position');
     if (position) position.value = category;
     document.getElementById('employee-cabinet')?.classList.add('hidden');
+    document.getElementById('quiz-main')?.classList.remove('hidden');
     document.getElementById('quiz-form')?.classList.remove('hidden');
     document.getElementById('video-instruction-block')?.classList.remove('hidden');
     const profileName = document.getElementById('profile-full-name')?.value.trim();
