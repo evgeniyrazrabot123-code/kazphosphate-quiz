@@ -497,10 +497,8 @@ function openCabinetMode(mode) {
 function logoutEmployee() {
     employeeCabinetCredentials = null;
     document.getElementById('cabinet-content')?.classList.add('hidden');
-    document.getElementById('employee-login-form')?.classList.remove('hidden');
     document.getElementById('cabinet-error')?.classList.add('hidden');
-    document.getElementById('employee-register-form')?.classList.remove('hidden');
-    document.getElementById('cabinet-mode-toggle').textContent = 'Уже зарегистрированы? Войти';
+    openCabinetMode('register');
     document.getElementById('cabinet-mode-toggle')?.classList.remove('hidden');
     const button = document.getElementById('btn-cabinet');
     if (button) {
@@ -511,13 +509,8 @@ function logoutEmployee() {
 }
 
 function toggleCabinetMode() {
-    const registerForm = document.getElementById('employee-register-form');
     const loginForm = document.getElementById('employee-login-form');
-    const toggle = document.getElementById('cabinet-mode-toggle');
-    const showingLogin = !loginForm?.classList.contains('hidden');
-    registerForm?.classList.toggle('hidden', showingLogin);
-    loginForm?.classList.toggle('hidden', !showingLogin);
-    if (toggle) toggle.textContent = showingLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже зарегистрированы? Войти';
+    openCabinetMode(loginForm?.classList.contains('hidden') ? 'login' : 'register');
 }
 
 async function registerEmployee(event) {
@@ -620,13 +613,15 @@ function updateCabinetHeader(fullName = '') {
 }
 
 function populateProfilePositions(selectedValue = '') {
-    const select = document.getElementById('profile-position');
-    if (!select) return;
     const specialties = getSpecialties();
     const entries = Object.entries(specialties);
-    select.innerHTML = entries.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
-    select.disabled = entries.length === 0;
-    select.value = selectedValue || Object.keys(specialties)[0] || '';
+    ['profile-position', 'register-position'].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = entries.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+        select.disabled = entries.length === 0;
+        select.value = selectedValue || Object.keys(specialties)[0] || '';
+    });
 }
 
 async function saveEmployeeProfile(event) {
