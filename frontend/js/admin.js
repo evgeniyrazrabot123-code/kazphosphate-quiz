@@ -404,23 +404,104 @@ function resetSpecForm() {
 // ------------------------------------------------------------------
 // 4. ЗАГРУЗКА РЕЗУЛЬТАТОВ И БЕЙДЖИ
 // ------------------------------------------------------------------
+function isResultPassed(result) {
+    return Number(result.total_questions) > 0 && Number(result.score) / Number(result.total_questions) >= 0.7;
+}
+
+function updateResultsDashboard() {
+    const results = Array.isArray(globalResults) ? globalResults : [];
+    const passed = results.filter(isResultPassed).length;
+    const failed = results.length - passed;
+    const percentages = results.map(result => Number(result.total_questions) > 0
+        ? (Number(result.score) / Number(result.total_questions)) * 100
+        : 0);
+    const average = percentages.length ? percentages.reduce((sum, value) => sum + value, 0) / percentages.length : 0;
+    const passRate = results.length ? (passed / results.length) * 100 : 0;
+    const minScore = percentages.length ? Math.min(...percentages) : 0;
+    const maxScore = percentages.length ? Math.max(...percentages) : 0;
+
+    const values = {
+        'dashboard-total': results.length,
+        'dashboard-passed': passed,
+        'dashboard-failed': failed,
+        'dashboard-average': `${Math.round(average)}%`,
+        'dashboard-pass-rate': `${Math.round(passRate)}%`,
+        'dashboard-score-range': percentages.length ? `Результаты: ${Math.round(minScore)}–${Math.round(maxScore)}%` : 'Нет данных'
+    };
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+
+    const bar = document.getElementById('dashboard-pass-bar');
+    if (bar) bar.style.width = `${passRate}%`;
+    const updated = document.getElementById('results-dashboard-updated');
+    if (updated) updated.textContent = `Обновлено: ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function populateResultsSpecialtyFilter() {
+    const select = document.getElementById('filter-spec');
+    if (!select) return;
+
+    const selectedValue = select.value;
+    const specialties = [...new Set((Array.isArray(globalResults) ? globalResults : [])
+        .map(result => result.position)
+        .filter(Boolean))];
+    const specs = getSpecialties();
+    select.innerHTML = '<option value="">Все специальности</option>';
+    specialties.sort((first, second) => (specs[first] || first).localeCompare(specs[second] || second, 'ru'));
+    specialties.forEach(code => {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = specs[code] || code;
+        select.appendChild(option);
+    });
+    select.value = specialties.includes(selectedValue) ? selectedValue : '';
+}
+
 async function loadResults() {
     try {
         const response = await adminFetch('/api/admin/results');
         globalResults = await response.json();
-        const tbody = document.getElementById('results-table-body');
-        if (!tbody) return;
+        updateResultsDashboard();
+        populateResultsSpecialtyFilter();
+        renderResultsTable();
+    } catch (err) {
+        console.error("Ошибка загрузки результатов:", err);
+    }
+}
+
+function renderResultsTable() {
+    const tbody = document.getElementById('results-table-body');
+    if (!tbody) return;
+
+    const query = document.getElementById('search-results')?.value.trim().toLowerCase() || '';
+    const specialty = document.getElementById('filter-spec')?.value || '';
+    const status = document.getElementById('filter-status')?.value || '';
+    const specs = getSpecialties();
+    const filteredResults = (Array.isArray(globalResults) ? globalResults : []).filter(result => {
+        const searchable = `${result.full_name || ''} ${result.iin || ''}`.toLowerCase();
+        const matchesQuery = !query || searchable.includes(query);
+        const matchesSpecialty = !specialty || result.position === specialty;
+        const matchesStatus = !status || (status === 'pass' ? isResultPassed(result) : !isResultPassed(result));
+        return matchesQuery && matchesSpecialty && matchesStatus;
+    });
+
         tbody.innerHTML = '';
 
-        if (!Array.isArray(globalResults) || globalResults.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Результаты тестирования в базе данных отсутствуют</td></tr>`;
+        if (filteredResults.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">По выбранным условиям результатов нет</td></tr>`;
             return;
         }
 
-        const specs = getSpecialties();
-        globalResults.forEach((res, index) => {
+        filteredResults.forEach((res) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50/80 transition-colors";
+            const passed = isResultPassed(res);
+            const resultPercent = res.total_questions > 0 ? Math.round((res.score / res.total_questions) * 100) : 0;
+            const resultStatus = passed
+                ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-extrabold text-emerald-800">✓ ПРОШЕЛ</span>'
+                : '<span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-[10px] font-extrabold text-red-800">× НЕ ПРОШЕЛ</span>';
 
             const docs = [];
             if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-600 hover:underline font-bold">Фото 3x4</a>`);
@@ -434,10 +515,10 @@ async function loadResults() {
                 <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
                 <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
                 <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
-                <td class="p-3 border-r border-slate-100 font-extrabold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
+                <td class="p-3 border-r border-slate-100"><div class="font-extrabold ${passed ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions} (${resultPercent}%)</div><div class="mt-1">${resultStatus}</div></td>
                 <td class="p-3 border-r border-slate-100">${docsHtml}</td>
                 <td class="p-3 text-center border-r border-slate-100">
-                    <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
+                    <button onclick="openBadgeModal(${globalResults.indexOf(res)})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
                 </td>
                 <td class="p-3 text-center">
                     <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
@@ -445,9 +526,6 @@ async function loadResults() {
             `;
             tbody.appendChild(tr);
         });
-    } catch (err) {
-        console.error("Ошибка загрузки результатов:", err);
-    }
 }
 
 async function deleteResult(id) {
