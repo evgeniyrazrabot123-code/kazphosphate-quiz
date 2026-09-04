@@ -244,6 +244,63 @@ def get_questions(category: str, lang: str = "ru", db: Session = Depends(get_db)
         })
     return result
 
+
+def find_employee_for_login(phone: str, birth_date: str, db: Session):
+    normalized_phone = (phone or '').strip()
+    normalized_birth_date = (birth_date or '').strip()
+    if not normalized_phone or not normalized_birth_date:
+        return None
+    return db.query(models.Employee).filter(
+        models.Employee.phone == normalized_phone,
+        models.Employee.birth_date == normalized_birth_date
+    ).order_by(models.Employee.id.desc()).first()
+
+
+@app.post('/api/employee/login')
+def employee_login(phone: str = Form(...), birth_date: str = Form(...), db: Session = Depends(get_db)):
+    employee = find_employee_for_login(phone, birth_date, db)
+    if not employee:
+        raise HTTPException(status_code=404, detail='Сотрудник не найден. Сначала пройдите регистрацию.')
+    return {"employee_id": employee.id, "full_name": employee.full_name}
+
+
+@app.get('/api/employee/cabinet')
+def employee_cabinet(phone: str, birth_date: str, db: Session = Depends(get_db)):
+    employee = find_employee_for_login(phone, birth_date, db)
+    if not employee:
+        raise HTTPException(status_code=404, detail='Сотрудник не найден')
+
+    assignments = db.query(models.TestAssignment).filter(
+        models.TestAssignment.employee_id == employee.id
+    ).order_by(models.TestAssignment.assigned_at.desc()).all()
+    results = db.query(models.TestResult).filter(
+        models.TestResult.employee_id == employee.id,
+        models.TestResult.is_deleted == False
+    ).order_by(models.TestResult.passed_at.desc()).all()
+
+    return {
+        "employee": {
+            "id": employee.id,
+            "full_name": employee.full_name,
+            "phone": employee.phone,
+            "birth_date": employee.birth_date,
+            "position": employee.position,
+        },
+        "assignments": [{
+            "id": assignment.id,
+            "category": assignment.category,
+            "status": assignment.status,
+            "assigned_at": assignment.assigned_at.strftime('%d.%m.%Y %H:%M') if assignment.assigned_at else '—',
+        } for assignment in assignments],
+        "results": [{
+            "id": result.id,
+            "score": result.score,
+            "total_questions": result.total_questions,
+            "passed_at": result.passed_at.strftime('%d.%m.%Y %H:%M') if result.passed_at else '—',
+            "passed": result.total_questions > 0 and result.score / result.total_questions >= 0.7,
+        } for result in results]
+    }
+
 @app.post("/api/submit")
 async def submit_quiz(
     full_name: str = Form(...),
@@ -265,18 +322,29 @@ async def submit_quiz(
         id_card_photo_path = save_upload_file(photo_id_card)
 
         # 2. Создание карточки сотрудника
-        employee = models.Employee(
-            full_name=full_name.strip() if full_name else "",
-            birth_date=birth_date,
-            position=position,
-            iin=iin.strip() if iin and iin.strip() else None,
-            phone=phone.strip() if phone else None,
-            citizenship=citizenship.strip() if citizenship else None,
-            photo_user_path=user_photo_path,
-            photo_license_path=lic_photo_path,
-            photo_id_card_path=id_card_photo_path,
-        )
-        db.add(employee)
+        employee = find_employee_for_login(phone, birth_date, db)
+        if employee:
+            employee.full_name = full_name.strip() if full_name else employee.full_name
+            employee.position = position
+            if user_photo_path:
+                employee.photo_user_path = user_photo_path
+            if lic_photo_path:
+                employee.photo_license_path = lic_photo_path
+            if id_card_photo_path:
+                employee.photo_id_card_path = id_card_photo_path
+        else:
+            employee = models.Employee(
+                full_name=full_name.strip() if full_name else "",
+                birth_date=birth_date,
+                position=position,
+                iin=iin.strip() if iin and iin.strip() else None,
+                phone=phone.strip() if phone else None,
+                citizenship=citizenship.strip() if citizenship else None,
+                photo_user_path=user_photo_path,
+                photo_license_path=lic_photo_path,
+                photo_id_card_path=id_card_photo_path,
+            )
+            db.add(employee)
         db.commit()
         db.refresh(employee)
 
@@ -316,6 +384,14 @@ async def submit_quiz(
             total_questions=total,
         )
         db.add(test_result)
+        assignment = db.query(models.TestAssignment).filter(
+            models.TestAssignment.employee_id == employee.id,
+            models.TestAssignment.category == position,
+            models.TestAssignment.status == 'assigned'
+        ).order_by(models.TestAssignment.assigned_at.asc()).first()
+        if assignment:
+            assignment.status = 'completed'
+            assignment.completed_at = datetime.utcnow()
         db.commit()
 
         return {
@@ -361,6 +437,7 @@ def get_results_admin(request: Request, db: Session = Depends(get_db), admin_aut
         
         output.append({
             "id": r.id,
+            "employee_id": emp.id if emp else None,
             "passed_at": r.passed_at.strftime("%d.%m.%Y %H:%M") if r and r.passed_at else "—",
             "full_name": emp.full_name if emp else "—",
             "birth_date": emp.birth_date if emp else "—",
@@ -376,6 +453,17 @@ def get_results_admin(request: Request, db: Session = Depends(get_db), admin_aut
         })
         
     return output
+
+
+@app.post('/api/admin/assignments')
+def assign_test(employee_id: int = Form(...), category: str = Form(...), db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):
+    employee = db.query(models.Employee).filter(models.Employee.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail='Сотрудник не найден')
+    assignment = models.TestAssignment(employee_id=employee.id, category=category.strip(), status='assigned')
+    db.add(assignment)
+    db.commit()
+    return {"status": "success", "assignment_id": assignment.id}
 
 @app.delete("/api/admin/results/{r_id}")
 def delete_result(r_id: int, db: Session = Depends(get_db), admin_auth: str = Depends(get_admin_authorization)):

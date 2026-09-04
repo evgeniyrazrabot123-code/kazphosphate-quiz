@@ -4,6 +4,7 @@ let isSubmitting = false; // Блокировка от повторных кли
 const TEST_DURATION_MS = 30 * 60 * 1000;
 let quizTimerInterval = null;
 let quizDeadline = null;
+let employeeCabinetCredentials = null;
 
 // Дефолтные специальности ТОО «Казфосфат»
 const DEFAULT_SPECIALTIES = {
@@ -284,7 +285,7 @@ function setLanguage(lang) {
 }
 
 // ВАЛИДАЦИЯ
-async function goToStep2() {
+async function goToStep2(skipDocuments = false) {
     const fullName = document.getElementById('full_name')?.value.trim();
     const phone = document.getElementById('phone')?.value.trim();
     const birthDate = document.getElementById('birth_date')?.value;
@@ -316,7 +317,7 @@ async function goToStep2() {
     const hasIdCard = idcardElem && idcardElem.files && idcardElem.files.length > 0;
     const hasAnyDocument = hasLicense || hasIdCard;
 
-    if (!hasPhoto || !hasAnyDocument) {
+    if (!skipDocuments && (!hasPhoto || !hasAnyDocument)) {
         const msgs = [];
         if (!hasPhoto) msgs.push(currentLang === 'ru' ? 'Фото 3x4' : '3x4 фотосурет');
         if (!hasAnyDocument) msgs.push(currentLang === 'ru' ? 'хотя бы один документ' : 'кемінде бір құжат');
@@ -470,6 +471,79 @@ function goToStep1() {
     }
     quizDeadline = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleEmployeeCabinet() {
+    document.getElementById('employee-cabinet')?.classList.toggle('hidden');
+    document.getElementById('employee-cabinet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function logoutEmployee() {
+    employeeCabinetCredentials = null;
+    document.getElementById('cabinet-content')?.classList.add('hidden');
+    document.getElementById('employee-login-form')?.classList.remove('hidden');
+    document.getElementById('cabinet-error')?.classList.add('hidden');
+}
+
+async function loginEmployee(event) {
+    event.preventDefault();
+    const phone = document.getElementById('cabinet-phone')?.value.trim();
+    const birthDate = document.getElementById('cabinet-birth-date')?.value;
+    const errorNode = document.getElementById('cabinet-error');
+    try {
+        const body = new URLSearchParams({ phone, birth_date: birthDate });
+        const response = await fetch('/api/employee/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+        if (!response.ok) throw new Error((await response.json()).detail || 'Сотрудник не найден');
+        employeeCabinetCredentials = { phone, birthDate };
+        await loadEmployeeCabinet();
+        document.getElementById('employee-login-form')?.classList.add('hidden');
+        errorNode?.classList.add('hidden');
+    } catch (error) {
+        if (errorNode) {
+            errorNode.textContent = error.message;
+            errorNode.classList.remove('hidden');
+        }
+    }
+}
+
+async function loadEmployeeCabinet() {
+    if (!employeeCabinetCredentials) return;
+    const { phone, birthDate } = employeeCabinetCredentials;
+    const params = new URLSearchParams({ phone, birth_date: birthDate });
+    const response = await fetch(`/api/employee/cabinet?${params}`);
+    if (!response.ok) throw new Error('Не удалось загрузить кабинет');
+    const data = await response.json();
+
+    document.getElementById('cabinet-name').textContent = data.employee.full_name || '—';
+    document.getElementById('cabinet-position').textContent = getSpecialties()[data.employee.position] || data.employee.position || '—';
+    const assignmentsNode = document.getElementById('cabinet-assignments');
+    const assignments = data.assignments || [];
+    assignmentsNode.innerHTML = assignments.length ? assignments.map(assignment => `
+        <div class="border border-amber-200 bg-amber-50 rounded-xl p-3 flex items-center justify-between gap-3">
+            <div><p class="font-bold text-slate-900">Тест по специальности</p><p class="text-[10px] text-slate-500">Назначен: ${assignment.assigned_at}</p></div>
+            ${assignment.status === 'assigned' ? `<button type="button" onclick="startAssignedTest('${assignment.category}')" class="px-3 py-2 rounded-md bg-kpp-red text-white text-[10px] font-extrabold uppercase">Пройти</button>` : '<span class="text-[10px] font-bold text-emerald-700">Выполнен</span>'}
+        </div>`).join('') : '<p class="text-xs text-slate-500">Новых назначений пока нет.</p>';
+
+    const resultsNode = document.getElementById('cabinet-results');
+    const results = data.results || [];
+    resultsNode.innerHTML = results.length ? results.map(result => `
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 py-2">
+            <div><p class="font-bold text-slate-800">${result.passed_at}</p><p class="text-[10px] text-slate-500">Результат тестирования</p></div>
+            <div class="text-right"><p class="font-extrabold ${result.passed ? 'text-emerald-700' : 'text-red-700'}">${result.score} / ${result.total_questions}</p><p class="text-[10px] font-bold ${result.passed ? 'text-emerald-700' : 'text-red-700'}">${result.passed ? 'ПРОЙДЕН' : 'НЕ ПРОЙДЕН'}</p></div>
+        </div>`).join('') : '<p class="text-xs text-slate-500">История результатов пока пуста.</p>';
+    document.getElementById('cabinet-content')?.classList.remove('hidden');
+}
+
+async function startAssignedTest(category) {
+    const position = document.getElementById('position');
+    if (position) position.value = category;
+    document.getElementById('employee-cabinet')?.classList.add('hidden');
+    document.getElementById('quiz-form')?.classList.remove('hidden');
+    document.getElementById('video-instruction-block')?.classList.remove('hidden');
+    document.getElementById('full_name').value = document.getElementById('cabinet-name').textContent;
+    document.getElementById('phone').value = employeeCabinetCredentials.phone;
+    document.getElementById('birth_date').value = employeeCabinetCredentials.birthDate;
+    await goToStep2(true);
 }
 
 // ЗАГРУЗКА ВОПРОСОВ

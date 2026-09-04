@@ -519,6 +519,7 @@ function renderResultsTable() {
                 <td class="p-3 border-r border-slate-100">${docsHtml}</td>
                 <td class="p-3 text-center border-r border-slate-100">
                     <button onclick="openBadgeModal(${globalResults.indexOf(res)})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
+                    <button onclick="assignTest(${res.employee_id}, '${res.position}')" class="ml-1 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-extrabold uppercase transition text-[10px]">Назначить тест</button>
                 </td>
                 <td class="p-3 text-center">
                     <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
@@ -526,6 +527,22 @@ function renderResultsTable() {
             `;
             tbody.appendChild(tr);
         });
+}
+
+async function assignTest(employeeId, category) {
+    if (!employeeId || !confirm('Назначить сотруднику новый тест?')) return;
+    const body = new URLSearchParams({ employee_id: String(employeeId), category });
+    try {
+        const response = await adminFetch('/api/admin/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        });
+        if (!response.ok) throw new Error();
+        alert('Тест назначен сотруднику.');
+    } catch (error) {
+        alert('Не удалось назначить тест.');
+    }
 }
 
 async function deleteResult(id) {

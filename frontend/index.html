@@ -58,6 +58,7 @@
             <!-- PWA install / download button (replaces previous stepper) -->
             <div class="flex items-center space-x-3">
                 <button id="btn-install" class="hidden px-3 py-1 text-xs font-bold rounded-md bg-[#0F1E36] text-white transition-all">Скачать приложение</button>
+                <button id="btn-cabinet" type="button" onclick="toggleEmployeeCabinet()" class="px-3 py-1.5 text-xs font-bold rounded-md bg-kpp-red text-white transition-all">Личный кабинет</button>
             </div>
 
             <!-- КНОПКИ ПЕРЕКЛЮЧЕНИЯ ЯЗЫКОВ -->
@@ -82,6 +83,45 @@
                     <p id="instr-desc" class="text-xs text-slate-500 leading-relaxed font-medium">
                         Настоящая проверка предназначена для подтверждения уровня профессиональной подготовки, допусков к работе на объектах повышенной опасности и знаний требований охраны труда ТОО «Казфосфат».
                     </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ЛИЧНЫЙ КАБИНЕТ СОТРУДНИКА -->
+        <section id="employee-cabinet" class="hidden bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-kpp-red">Персональный раздел</p>
+                    <h2 class="text-lg font-extrabold text-slate-900">Личный кабинет сотрудника</h2>
+                </div>
+                <button type="button" onclick="logoutEmployee()" class="px-3 py-1.5 rounded-md border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50">Выйти</button>
+            </div>
+
+            <form id="employee-login-form" onsubmit="loginEmployee(event)" class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Телефон</label>
+                    <input id="cabinet-phone" type="tel" required class="w-full px-3 py-2 kpp-input" placeholder="Контактный телефон">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Дата рождения</label>
+                    <input id="cabinet-birth-date" type="date" required class="w-full px-3 py-2 kpp-input">
+                </div>
+                <button type="submit" class="px-4 py-2.5 rounded-md bg-[#0F1E36] text-white font-bold text-xs uppercase">Войти в кабинет</button>
+            </form>
+            <p id="cabinet-error" class="hidden mt-3 text-xs font-semibold text-red-700"></p>
+
+            <div id="cabinet-content" class="hidden mt-5 space-y-5">
+                <div class="rounded-xl bg-[#0F1E36] text-white p-4 flex flex-col sm:flex-row justify-between gap-3">
+                    <div><p class="text-[10px] uppercase tracking-wider text-slate-300">Сотрудник</p><p id="cabinet-name" class="text-lg font-extrabold"></p></div>
+                    <div class="sm:text-right"><p class="text-[10px] uppercase tracking-wider text-slate-300">Должность</p><p id="cabinet-position" class="font-bold"></p></div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2"><h3 class="text-xs font-extrabold uppercase text-slate-800">Назначенные тесты</h3><span class="text-[10px] text-slate-500">Доступны после назначения руководителем</span></div>
+                    <div id="cabinet-assignments" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-extrabold uppercase text-slate-800 mb-2">История результатов</h3>
+                    <div id="cabinet-results" class="space-y-2"></div>
                 </div>
             </div>
         </section>

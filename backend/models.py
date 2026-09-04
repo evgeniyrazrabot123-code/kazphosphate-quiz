@@ -51,6 +51,19 @@ class TestResult(Base):
     employee = relationship("Employee", back_populates="results")
 
 
+class TestAssignment(Base):
+    __tablename__ = "test_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    category = Column(String, nullable=False)
+    status = Column(String, default="assigned")
+    assigned_at = Column(DateTime, default=datetime.datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    employee = relationship("Employee")
+
+
 class PassCard(Base):
     __tablename__ = "pass_cards"
 
