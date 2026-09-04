@@ -623,7 +623,9 @@ function populateProfilePositions(selectedValue = '') {
     const select = document.getElementById('profile-position');
     if (!select) return;
     const specialties = getSpecialties();
-    select.innerHTML = Object.entries(specialties).map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+    const entries = Object.entries(specialties);
+    select.innerHTML = entries.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+    select.disabled = entries.length === 0;
     select.value = selectedValue || Object.keys(specialties)[0] || '';
 }
 
@@ -877,6 +879,7 @@ async function handleFormSubmit(e, forceTimeout = false) {
 document.addEventListener('DOMContentLoaded', () => {
     setLanguage(currentLang);
     populatePositionsList();
+    populateProfilePositions();
 
     const quizForm = document.getElementById('quiz-form');
     const nextButton = document.getElementById('btn-next');
