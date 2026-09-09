@@ -11,6 +11,10 @@ DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
 # SQLite is convenient for local development, but Render's service filesystem is
 # ephemeral. Require an external database there instead of silently losing data.
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+# Render values are sometimes pasted with surrounding quotes. Remove only a
+# matching pair so the URL parser receives the actual connection string.
+if len(DATABASE_URL) >= 2 and DATABASE_URL[0] == DATABASE_URL[-1] and DATABASE_URL[0] in {"'", '"'}:
+    DATABASE_URL = DATABASE_URL[1:-1].strip()
 IS_RENDER = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
 if IS_RENDER and not DATABASE_URL:
     raise RuntimeError(
