@@ -196,7 +196,7 @@ async function loginAdmin(e) {
         adminToken = data.token;
         localStorage.setItem('adminToken', adminToken);
         showAdminApp();
-        switchTab('dashboard');
+        switchTab('results');
     } catch (err) {
         if (errorNode) {
             errorNode.innerText = 'Неверный логин или пароль.';
@@ -212,7 +212,7 @@ function switchTab(tab) {
     const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition";
     const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-slate-900 bg-white border border-slate-300 text-xs uppercase tracking-wider transition";
 
-    ['dashboard', 'results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
+    ['results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
         document.getElementById(`tab-${t}`)?.classList.add('hidden');
         const btn = document.getElementById(`tab-${t}-btn`);
         if (btn) btn.className = inactiveClass;
@@ -223,7 +223,7 @@ function switchTab(tab) {
     const targetBtn = document.getElementById(`tab-${targetTabId}-btn`);
     if (targetBtn) targetBtn.className = activeClass;
 
-    if (tab === 'dashboard' || tab === 'results') loadResults();
+    if (tab === 'results') loadResults();
     else if (tab === 'questions_list') loadQuestionsList();
     else if (tab === 'add_question') populateCategorySelects();
     else if (tab === 'specialties') renderSpecialtiesTable();
@@ -404,144 +404,23 @@ function resetSpecForm() {
 // ------------------------------------------------------------------
 // 4. ЗАГРУЗКА РЕЗУЛЬТАТОВ И БЕЙДЖИ
 // ------------------------------------------------------------------
-function isResultPassed(result) {
-    return Number(result.total_questions) > 0 && Number(result.score) / Number(result.total_questions) >= 0.7;
-}
-
-function updateResultsDashboard() {
-    const results = Array.isArray(globalResults) ? globalResults : [];
-    const passed = results.filter(isResultPassed).length;
-    const failed = results.length - passed;
-    const percentages = results.map(result => Number(result.total_questions) > 0
-        ? (Number(result.score) / Number(result.total_questions)) * 100
-        : 0);
-    const average = percentages.length ? percentages.reduce((sum, value) => sum + value, 0) / percentages.length : 0;
-    const passRate = results.length ? (passed / results.length) * 100 : 0;
-    const minScore = percentages.length ? Math.min(...percentages) : 0;
-    const maxScore = percentages.length ? Math.max(...percentages) : 0;
-
-    const values = {
-        'dashboard-total': results.length,
-        'dashboard-passed': passed,
-        'dashboard-failed': failed,
-        'dashboard-average': `${Math.round(average)}%`,
-        'dashboard-pass-rate': `${Math.round(passRate)}%`,
-        'dashboard-score-range': percentages.length ? `Результаты: ${Math.round(minScore)}–${Math.round(maxScore)}%` : 'Нет данных'
-    };
-    Object.entries(values).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = value;
-    });
-
-    const bar = document.getElementById('dashboard-pass-bar');
-    if (bar) bar.style.width = `${passRate}%`;
-    const updated = document.getElementById('results-dashboard-updated');
-    if (updated) updated.textContent = `Обновлено: ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
-}
-
-function populateResultsSpecialtyFilter() {
-    const select = document.getElementById('filter-spec');
-    if (!select) return;
-
-    const selectedValue = select.value;
-    const specialties = [...new Set((Array.isArray(globalResults) ? globalResults : [])
-        .map(result => result.position)
-        .filter(Boolean))];
-    const specs = getSpecialties();
-    select.innerHTML = '<option value="">Все специальности</option>';
-    specialties.sort((first, second) => (specs[first] || first).localeCompare(specs[second] || second, 'ru'));
-    specialties.forEach(code => {
-        const option = document.createElement('option');
-        option.value = code;
-        option.textContent = specs[code] || code;
-        select.appendChild(option);
-    });
-    select.value = specialties.includes(selectedValue) ? selectedValue : '';
-}
-
-async function loadAssignmentEmployees() {
-    const employeeSelect = document.getElementById('assignment-employee');
-    const categorySelect = document.getElementById('assignment-category');
-    if (!employeeSelect || !categorySelect) return;
-    try {
-        const [employeesResponse, specialtiesResponse] = await Promise.all([
-            adminFetch('/api/admin/employees'),
-            adminFetch('/api/admin/specialties')
-        ]);
-        const employees = await employeesResponse.json();
-        const specialties = await specialtiesResponse.json();
-        employeeSelect.innerHTML = '<option value="">Выберите сотрудника</option>' + employees.map(employee => `<option value="${employee.id}">${employee.full_name} · ${employee.phone} · ${employee.birth_date}</option>`).join('');
-        categorySelect.innerHTML = specialties.map(specialty => `<option value="${specialty.code}">${specialty.name_ru}</option>`).join('');
-        const employeesBody = document.getElementById('employees-table-body');
-        if (employeesBody) {
-            employeesBody.innerHTML = employees.length ? employees.map(employee => {
-                const documents = [
-                    employee.photo_user && `<a href="${employee.photo_user}" target="_blank" class="text-blue-700 hover:underline font-bold">Фото</a>`,
-                    employee.photo_license && `<a href="${employee.photo_license}" target="_blank" class="text-blue-700 hover:underline font-bold">Права</a>`,
-                    employee.photo_id_card && `<a href="${employee.photo_id_card}" target="_blank" class="text-blue-700 hover:underline font-bold">Удостоверение</a>`
-                ].filter(Boolean).join(' · ') || '<span class="text-slate-400">Нет файлов</span>';
-                return `<tr class="hover:bg-slate-50"><td class="p-2.5 font-bold">${employee.full_name}</td><td class="p-2.5">${employee.phone}</td><td class="p-2.5">${employee.birth_date}</td><td class="p-2.5">${documents}</td></tr>`;
-            }).join('') : '<tr><td colspan="4" class="p-3 text-center text-slate-400">Сотрудники ещё не зарегистрированы</td></tr>';
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки сотрудников для назначения:', error);
-    }
-}
-
-async function assignSelectedTest() {
-    const employeeId = document.getElementById('assignment-employee')?.value;
-    const category = document.getElementById('assignment-category')?.value;
-    if (!employeeId || !category) {
-        alert('Выберите сотрудника и специальность.');
-        return;
-    }
-    await assignTest(employeeId, category);
-}
-
 async function loadResults() {
     try {
         const response = await adminFetch('/api/admin/results');
         globalResults = await response.json();
-        updateResultsDashboard();
-        populateResultsSpecialtyFilter();
-        loadAssignmentEmployees();
-        renderResultsTable();
-    } catch (err) {
-        console.error("Ошибка загрузки результатов:", err);
-    }
-}
-
-function renderResultsTable() {
-    const tbody = document.getElementById('results-table-body');
-    if (!tbody) return;
-
-    const query = document.getElementById('search-results')?.value.trim().toLowerCase() || '';
-    const specialty = document.getElementById('filter-spec')?.value || '';
-    const status = document.getElementById('filter-status')?.value || '';
-    const specs = getSpecialties();
-    const filteredResults = (Array.isArray(globalResults) ? globalResults : []).filter(result => {
-        const searchable = `${result.full_name || ''} ${result.iin || ''}`.toLowerCase();
-        const matchesQuery = !query || searchable.includes(query);
-        const matchesSpecialty = !specialty || result.position === specialty;
-        const matchesStatus = !status || (status === 'pass' ? isResultPassed(result) : !isResultPassed(result));
-        return matchesQuery && matchesSpecialty && matchesStatus;
-    });
-
+        const tbody = document.getElementById('results-table-body');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
-        if (filteredResults.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">По выбранным условиям результатов нет</td></tr>`;
+        if (!Array.isArray(globalResults) || globalResults.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Результаты тестирования в базе данных отсутствуют</td></tr>`;
             return;
         }
 
-        filteredResults.forEach((res) => {
+        const specs = getSpecialties();
+        globalResults.forEach((res, index) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50/80 transition-colors";
-            const passed = isResultPassed(res);
-            const resultPercent = res.total_questions > 0 ? Math.round((res.score / res.total_questions) * 100) : 0;
-            const resultStatus = passed
-                ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-extrabold text-emerald-800">✓ ПРОШЕЛ</span>'
-                : '<span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-[10px] font-extrabold text-red-800">× НЕ ПРОШЕЛ</span>';
 
             const docs = [];
             if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-600 hover:underline font-bold">Фото 3x4</a>`);
@@ -555,11 +434,10 @@ function renderResultsTable() {
                 <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
                 <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
                 <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
-                <td class="p-3 border-r border-slate-100"><div class="font-extrabold ${passed ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions} (${resultPercent}%)</div><div class="mt-1">${resultStatus}</div></td>
+                <td class="p-3 border-r border-slate-100 font-extrabold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
                 <td class="p-3 border-r border-slate-100">${docsHtml}</td>
                 <td class="p-3 text-center border-r border-slate-100">
-                    <button onclick="openBadgeModal(${globalResults.indexOf(res)})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
-                    <button onclick="assignTest(${res.employee_id}, '${res.position}')" class="ml-1 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-extrabold uppercase transition text-[10px]">Назначить тест</button>
+                    <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
                 </td>
                 <td class="p-3 text-center">
                     <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
@@ -567,21 +445,8 @@ function renderResultsTable() {
             `;
             tbody.appendChild(tr);
         });
-}
-
-async function assignTest(employeeId, category) {
-    if (!employeeId || !confirm('Назначить сотруднику новый тест?')) return;
-    const body = new URLSearchParams({ employee_id: String(employeeId), category });
-    try {
-        const response = await adminFetch('/api/admin/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        });
-        if (!response.ok) throw new Error();
-        alert('Тест назначен сотруднику.');
-    } catch (error) {
-        alert('Не удалось назначить тест.');
+    } catch (err) {
+        console.error("Ошибка загрузки результатов:", err);
     }
 }
 
@@ -927,7 +792,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await adminFetch('/api/admin/results');
             showAdminApp();
-            switchTab('dashboard');
+            switchTab('results');
             return;
         } catch (err) {
             localStorage.removeItem('adminToken');

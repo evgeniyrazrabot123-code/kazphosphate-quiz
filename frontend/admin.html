@@ -92,7 +92,6 @@
 
         <!-- Вкладки -->
         <div class="flex flex-wrap gap-2 border-b pb-2">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard-btn" class="px-4 py-2 font-bold rounded bg-red-700 hover:bg-red-800 text-white text-xs uppercase tracking-wider transition shadow-sm">▦ Дэшборд</button>
             <button onclick="switchTab('results')" id="tab-results-btn" class="px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition">Результаты сотрудников</button>
             <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">Вопросы в базе</button>
             <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">+ Добавить вопрос</button>
@@ -100,52 +99,7 @@
         </div>
 
         <!-- ТАБЛИЦА РЕЗУЛЬТАТОВ -->
-        <section id="tab-dashboard" class="bg-white border rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
-                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-                    <div>
-                        <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-red-700">Обзор тестирования</p>
-                        <h2 class="text-2xl font-extrabold text-slate-900">Дэшборд прохождения</h2>
-                        <p class="text-xs text-slate-500 mt-1">Быстрый контроль сотрудников, успешно прошедших проверку.</p>
-                    </div>
-                    <p id="results-dashboard-updated" class="text-[11px] text-slate-500">Обновление данных...</p>
-                </div>
-
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Всего проверено</p>
-                        <p id="dashboard-total" class="mt-1 text-2xl font-extrabold text-slate-900">0</p>
-                    </div>
-                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Прошли</p>
-                        <p id="dashboard-passed" class="mt-1 text-2xl font-extrabold text-emerald-800">0</p>
-                    </div>
-                    <div class="rounded-xl border border-red-200 bg-red-50 p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-red-700">Не прошли</p>
-                        <p id="dashboard-failed" class="mt-1 text-2xl font-extrabold text-red-800">0</p>
-                    </div>
-                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Средний результат</p>
-                        <p id="dashboard-average" class="mt-1 text-2xl font-extrabold text-amber-800">0%</p>
-                    </div>
-                </div>
-
-                <div class="rounded-xl border border-slate-200 bg-white p-3">
-                    <div class="flex items-center justify-between gap-3 mb-2">
-                        <span class="text-[11px] font-bold text-slate-700">Доля успешно прошедших</span>
-                        <span id="dashboard-pass-rate" class="text-sm font-extrabold text-emerald-700">0%</span>
-                    </div>
-                    <div class="h-2.5 rounded-full bg-red-100 overflow-hidden">
-                        <div id="dashboard-pass-bar" class="h-full rounded-full bg-emerald-600 transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                    <div class="flex justify-between mt-2 text-[10px] text-slate-500">
-                        <span>Порог прохождения: 70%</span>
-                        <span id="dashboard-score-range">Нет данных</span>
-                    </div>
-                </div>
-        </section>
-
-        <!-- ТАБЛИЦА РЕЗУЛЬТАТОВ -->
-        <div id="tab-results" class="hidden bg-white border rounded-md p-4 shadow-sm space-y-3">
+        <div id="tab-results" class="bg-white border rounded-md p-4 shadow-sm space-y-3">
             <div class="flex flex-col md:flex-row justify-between gap-3 items-center bg-slate-50 p-2.5 rounded border border-slate-200">
                 <input type="text" id="search-results" oninput="renderResultsTable()" placeholder="🔍 Поиск по ФИО или ИИН..." class="px-3 py-1.5 kpp-input w-full md:w-64">
                 <div class="flex items-center gap-2 w-full md:w-auto">
@@ -158,16 +112,6 @@
                         <option value="fail">Не сдали</option>
                     </select>
                 </div>
-            </div>
-            <div class="flex flex-col md:flex-row md:items-end gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
-                <div class="flex-1"><label class="block text-[10px] font-extrabold uppercase text-amber-800 mb-1">Назначить тест зарегистрированному сотруднику</label><select id="assignment-employee" class="w-full px-3 py-2 kpp-input"><option value="">Выберите сотрудника</option></select></div>
-                <div><label class="block text-[10px] font-extrabold uppercase text-amber-800 mb-1">Специальность</label><select id="assignment-category" class="px-3 py-2 kpp-input"></select></div>
-                <button type="button" onclick="assignSelectedTest()" class="px-4 py-2.5 rounded-md bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-extrabold uppercase">Назначить тест</button>
-            </div>
-
-            <div class="rounded-xl border border-slate-200 overflow-hidden">
-                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200"><h3 class="text-[11px] font-extrabold uppercase text-slate-800">Зарегистрированные сотрудники</h3></div>
-                <div class="overflow-x-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="bg-white font-bold uppercase border-b text-slate-500"><th class="p-2.5">ФИО</th><th class="p-2.5">Телефон</th><th class="p-2.5">Дата рождения</th><th class="p-2.5">Документы</th></tr></thead><tbody id="employees-table-body" class="divide-y divide-slate-200"></tbody></table></div>
             </div>
 
             <div class="overflow-x-auto">
