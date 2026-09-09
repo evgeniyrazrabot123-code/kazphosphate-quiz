@@ -8,7 +8,17 @@ DATABASE_PATH = BASE_DIR / "app.db"
 DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # Read database URL from environment, fallback to local sqlite
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
+# SQLite is convenient for local development, but Render's service filesystem is
+# ephemeral. Require an external database there instead of silently losing data.
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+IS_RENDER = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+if IS_RENDER and not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is required on Render. Create a Render PostgreSQL database "
+        "and add its Internal Database URL to the web service environment."
+    )
+
+SQLALCHEMY_DATABASE_URL = DATABASE_URL or f"sqlite:///{DATABASE_PATH}"
 
 # Some providers use the old postgres:// scheme which SQLAlchemy may warn about
 if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

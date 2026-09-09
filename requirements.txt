@@ -3,3 +3,6 @@ uvicorn
 sqlalchemy
 python-multipart
 alembic
+psycopg2-binary
+openpyxl
+httpx2

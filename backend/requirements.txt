@@ -6,3 +6,4 @@ python-dateutil
 alembic
 psycopg2-binary
 openpyxl
+httpx2
