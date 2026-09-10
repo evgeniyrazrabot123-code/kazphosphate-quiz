@@ -212,7 +212,7 @@ function switchTab(tab) {
     const activeClass = "px-4 py-2 font-bold rounded bg-slate-900 text-white text-xs uppercase tracking-wider transition";
     const inactiveClass = "px-4 py-2 font-bold rounded text-slate-600 hover:text-slate-900 bg-white border border-slate-300 text-xs uppercase tracking-wider transition";
 
-    ['results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
+    ['dashboard', 'results', 'questions-list', 'add-question', 'specialties'].forEach(t => {
         document.getElementById(`tab-${t}`)?.classList.add('hidden');
         const btn = document.getElementById(`tab-${t}-btn`);
         if (btn) btn.className = inactiveClass;
@@ -223,7 +223,8 @@ function switchTab(tab) {
     const targetBtn = document.getElementById(`tab-${targetTabId}-btn`);
     if (targetBtn) targetBtn.className = activeClass;
 
-    if (tab === 'results') loadResults();
+    if (tab === 'dashboard') renderDashboard();
+    else if (tab === 'results') loadResults();
     else if (tab === 'questions_list') loadQuestionsList();
     else if (tab === 'add_question') populateCategorySelects();
     else if (tab === 'specialties') renderSpecialtiesTable();
@@ -404,10 +405,123 @@ function resetSpecForm() {
 // ------------------------------------------------------------------
 // 4. ЗАГРУЗКА РЕЗУЛЬТАТОВ И БЕЙДЖИ
 // ------------------------------------------------------------------
+function getResultPassed(res) {
+    if (!res || !Number.isFinite(Number(res.total_questions)) || Number(res.total_questions) <= 0) {
+        return false;
+    }
+    return Number(res.score) >= Number(res.total_questions) * 0.7;
+}
+
+function parseDateFromResult(dateString) {
+    if (!dateString) return null;
+    const text = String(dateString).trim();
+    if (!text || text === '—') return null;
+
+    const match = text.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    if (match) {
+        const [, day, month, year] = match;
+        const date = new Date(`${year}-${month}-${day}`);
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    const value = new Date(text);
+    return Number.isNaN(value.getTime()) ? null : value;
+}
+
+function renderDashboard() {
+    const totalNode = document.getElementById('dashboard-total');
+    const passNode = document.getElementById('dashboard-pass');
+    const failNode = document.getElementById('dashboard-fail');
+    const rateNode = document.getElementById('dashboard-rate');
+    const ringNode = document.getElementById('dashboard-ring');
+    const specialtiesNode = document.getElementById('dashboard-specialties');
+    const datesNode = document.getElementById('dashboard-dates');
+
+    if (!Array.isArray(globalResults) || !totalNode || !passNode || !failNode || !rateNode || !ringNode || !specialtiesNode || !datesNode) return;
+
+    const total = globalResults.length;
+    const passed = globalResults.filter(getResultPassed).length;
+    const failed = total - passed;
+    const passRate = total ? Math.round((passed / total) * 100) : 0;
+
+    totalNode.textContent = String(total);
+    passNode.textContent = String(passed);
+    failNode.textContent = String(failed);
+    rateNode.textContent = `${passRate}%`;
+    ringNode.style.background = `conic-gradient(#16a34a 0 ${passRate}%, #ef4444 ${passRate}% 100%)`;
+
+    const specs = getSpecialties();
+    const specialtyMap = {};
+    globalResults.forEach(res => {
+        const key = res.position || 'unknown';
+        if (!specialtyMap[key]) {
+            specialtyMap[key] = { total: 0, passed: 0 };
+        }
+        specialtyMap[key].total += 1;
+        if (getResultPassed(res)) specialtyMap[key].passed += 1;
+    });
+
+    const specialtyEntries = Object.entries(specialtyMap).sort((a, b) => b[1].total - a[1].total);
+    specialtiesNode.innerHTML = specialtyEntries.length
+        ? specialtyEntries.map(([code, data]) => {
+            const title = specs[code] || code || 'Без категории';
+            const pct = Math.round((data.passed / data.total) * 100);
+            return `
+                <div class="rounded-lg border border-slate-200 bg-white p-3">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <div class="font-bold text-slate-800 text-[11px]">${title}</div>
+                        <div class="text-[10px] text-slate-500">${data.passed}/${data.total}</div>
+                    </div>
+                    <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="mt-1 text-[10px] text-slate-500">${pct}% успешно</div>
+                </div>
+            `;
+        }).join('')
+        : '<div class="text-[11px] text-slate-400">Нет данных для специальностей</div>';
+
+    const dateMap = {};
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const key = date.toISOString().slice(0, 10);
+        dateMap[key] = 0;
+    }
+
+    globalResults.forEach(res => {
+        const parsed = parseDateFromResult(res.passed_at);
+        if (!parsed) return;
+        const key = parsed.toISOString().slice(0, 10);
+        if (Object.prototype.hasOwnProperty.call(dateMap, key)) {
+            dateMap[key] += 1;
+        }
+    });
+
+    const dateEntries = Object.entries(dateMap).map(([key, count]) => ({
+        label: new Date(`${key}T00:00:00`).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }),
+        count
+    }));
+
+    datesNode.innerHTML = dateEntries.map(item => `
+        <div class="rounded-lg border border-slate-200 bg-white p-2">
+            <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                <span>${item.label}</span>
+                <span>${item.count}</span>
+            </div>
+            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div class="h-full bg-slate-900 rounded-full" style="width: ${Math.min((item.count / Math.max(...dateEntries.map(x => x.count), 1)) * 100, 100)}%"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
 async function loadResults() {
     try {
         const response = await adminFetch('/api/admin/results');
         globalResults = await response.json();
+        renderDashboardStats();
         const tbody = document.getElementById('results-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -429,12 +543,13 @@ async function loadResults() {
 
             const docsHtml = docs.length > 0 ? docs.join(' | ') : '<span class="text-slate-400">Нет</span>';
             const prettyPosition = specs[res.position] || res.position;
+            const passed = getResultPassed(res);
 
             tr.innerHTML = `
                 <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
                 <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
                 <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
-                <td class="p-3 border-r border-slate-100 font-extrabold ${res.score >= res.total_questions * 0.7 ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
+                <td class="p-3 border-r border-slate-100 font-extrabold ${passed ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
                 <td class="p-3 border-r border-slate-100">${docsHtml}</td>
                 <td class="p-3 text-center border-r border-slate-100">
                     <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
