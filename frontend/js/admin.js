@@ -517,49 +517,70 @@ function renderDashboard() {
     `).join('');
 }
 
+function renderResultsTable() {
+    const tbody = document.getElementById('results-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!Array.isArray(globalResults) || globalResults.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Результаты тестирования в базе данных отсутствуют</td></tr>`;
+        return;
+    }
+
+    const searchValue = (document.getElementById('search-results')?.value || '').trim().toLowerCase();
+    const filterSpec = document.getElementById('filter-spec')?.value || '';
+    const filterStatus = document.getElementById('filter-status')?.value || '';
+    const specs = getSpecialties();
+
+    const filtered = globalResults.filter(res => {
+        const matchesSearch = !searchValue || (res.full_name || '').toLowerCase().includes(searchValue) || (res.iin || '').toLowerCase().includes(searchValue);
+        const matchesSpec = !filterSpec || (res.position || '') === filterSpec;
+        const passed = getResultPassed(res);
+        const matchesStatus = !filterStatus || (filterStatus === 'pass' && passed) || (filterStatus === 'fail' && !passed);
+        return matchesSearch && matchesSpec && matchesStatus;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Нет результатов по выбранным фильтрам</td></tr>`;
+        return;
+    }
+
+    filtered.forEach((res, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition-colors';
+
+        const docs = [];
+        if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-600 hover:underline font-bold">Фото 3x4</a>`);
+        if (res.photo_license) docs.push(`<a href="${res.photo_license}" target="_blank" class="text-blue-600 hover:underline font-bold">Водительское удостоверение</a>`);
+        if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-600 hover:underline font-bold">Уд. Машиниста</a>`);
+
+        const docsHtml = docs.length > 0 ? docs.join(' | ') : '<span class="text-slate-400">Нет</span>';
+        const prettyPosition = specs[res.position] || res.position;
+        const passed = getResultPassed(res);
+
+        tr.innerHTML = `
+            <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
+            <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
+            <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
+            <td class="p-3 border-r border-slate-100 font-extrabold ${passed ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
+            <td class="p-3 border-r border-slate-100">${docsHtml}</td>
+            <td class="p-3 text-center border-r border-slate-100">
+                <button onclick="openBadgeModal(${globalResults.indexOf(res)})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
+            </td>
+            <td class="p-3 text-center">
+                <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadResults() {
     try {
         const response = await adminFetch('/api/admin/results');
         globalResults = await response.json();
-        renderDashboardStats();
-        const tbody = document.getElementById('results-table-body');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (!Array.isArray(globalResults) || globalResults.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Результаты тестирования в базе данных отсутствуют</td></tr>`;
-            return;
-        }
-
-        const specs = getSpecialties();
-        globalResults.forEach((res, index) => {
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50/80 transition-colors";
-
-            const docs = [];
-            if (res.photo_user) docs.push(`<a href="${res.photo_user}" target="_blank" class="text-blue-600 hover:underline font-bold">Фото 3x4</a>`);
-            if (res.photo_license) docs.push(`<a href="${res.photo_license}" target="_blank" class="text-blue-600 hover:underline font-bold">Водительское удостоверение</a>`);
-            if (res.photo_id_card) docs.push(`<a href="${res.photo_id_card}" target="_blank" class="text-blue-600 hover:underline font-bold">Уд. Машиниста</a>`);
-
-            const docsHtml = docs.length > 0 ? docs.join(' | ') : '<span class="text-slate-400">Нет</span>';
-            const prettyPosition = specs[res.position] || res.position;
-            const passed = getResultPassed(res);
-
-            tr.innerHTML = `
-                <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${res.passed_at}</td>
-                <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${res.full_name}</td>
-                <td class="p-3 border-r border-slate-100 text-slate-700">${prettyPosition}</td>
-                <td class="p-3 border-r border-slate-100 font-extrabold ${passed ? 'text-emerald-700' : 'text-red-600'}">${res.score} / ${res.total_questions}</td>
-                <td class="p-3 border-r border-slate-100">${docsHtml}</td>
-                <td class="p-3 text-center border-r border-slate-100">
-                    <button onclick="openBadgeModal(${index})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
-                </td>
-                <td class="p-3 text-center">
-                    <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        renderDashboard();
+        renderResultsTable();
     } catch (err) {
         console.error("Ошибка загрузки результатов:", err);
     }
