@@ -62,16 +62,9 @@ except ImportError:
 # =====================================================================
 # АВТОРИЗАЦИЯ АДМИНА
 # =====================================================================
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', '').strip()
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
-ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '')
-
-def require_admin_config():
-    if not ADMIN_USERNAME or not ADMIN_PASSWORD or not ADMIN_TOKEN:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail='Админ-доступ не настроен. Задайте ADMIN_USERNAME, ADMIN_PASSWORD и ADMIN_TOKEN в переменных окружения.'
-        )
+ADMIN_USERNAME = 'admin'
+ADMIN_PASSWORD = 'Kpp-Quiz!Admin-2026'
+ADMIN_TOKEN = 'Kpp-Quiz-Admin-API-Token-2026'
 
 def verify_admin_credentials(username: str, password: str) -> bool:
     if not ADMIN_USERNAME or not ADMIN_PASSWORD:
@@ -81,7 +74,6 @@ def verify_admin_credentials(username: str, password: str) -> bool:
     )
 
 def get_admin_authorization(authorization: str | None = Header(None)) -> str:
-    require_admin_config()
     if not authorization or not authorization.startswith('Bearer '):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized')
     token = authorization.split(' ', 1)[1].strip()
@@ -522,7 +514,6 @@ async def submit_quiz(
 # =====================================================================
 @app.post('/api/admin/login')
 def admin_login(username: str = Form(...), password: str = Form(...)):
-    require_admin_config()
     if not verify_admin_credentials(username, password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     return {'token': ADMIN_TOKEN}
