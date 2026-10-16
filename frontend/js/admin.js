@@ -460,12 +460,19 @@ function parseDateFromResult(dateString) {
     const match = text.match(/(\d{2})\.(\d{2})\.(\d{4})/);
     if (match) {
         const [, day, month, year] = match;
-        const date = new Date(`${year}-${month}-${day}`);
+        const date = new Date(Number(year), Number(month) - 1, Number(day));
         return Number.isNaN(date.getTime()) ? null : date;
     }
 
     const value = new Date(text);
     return Number.isNaN(value.getTime()) ? null : value;
+}
+
+function getLocalDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function renderDashboard() {
@@ -494,7 +501,8 @@ function renderDashboard() {
     passNode.textContent = String(passed);
     failNode.textContent = String(failed);
     rateNode.textContent = `${passRate}%`;
-    ringNode.style.background = `conic-gradient(#16a34a 0 ${passRate}%, #ef4444 ${passRate}% 100%)`;
+    ringNode.style.setProperty('--pass-rate', `${passRate}%`);
+    ringNode.setAttribute('aria-label', `${passRate}% сотрудников сдали тест`);
     if (resultsTotalNode) resultsTotalNode.textContent = String(total);
     if (resultsPassNode) resultsPassNode.textContent = String(passed);
     if (resultsFailNode) resultsFailNode.textContent = String(failed);
@@ -524,33 +532,32 @@ function renderDashboard() {
             const title = escapeHtml(specs[code] || code || 'Без категории');
             const pct = Math.round((data.passed / data.total) * 100);
             return `
-                <div class="rounded-lg border border-slate-200 bg-white p-3">
-                    <div class="flex items-center justify-between gap-2 mb-2">
-                        <div class="font-bold text-slate-800 text-[11px]">${title}</div>
-                        <div class="text-[10px] text-slate-500">${data.passed}/${data.total}</div>
+                <div class="space-y-2">
+                    <div class="flex items-end justify-between gap-3">
+                        <div class="min-w-0 truncate text-xs font-bold text-slate-800">${title}</div>
+                        <div class="shrink-0 text-[10px] font-semibold tabular-nums text-slate-500">${data.passed} из ${data.total} <span class="ml-1 font-extrabold text-slate-800">${pct}%</span></div>
                     </div>
-                    <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-emerald-500 rounded-full" style="width: ${pct}%"></div>
+                    <div class="h-2 overflow-hidden rounded-sm bg-slate-100" role="img" aria-label="${title}: успешно ${pct}%">
+                        <div class="h-full rounded-sm ${pct >= 70 ? 'bg-emerald-600' : 'bg-[#C8102E]'}" style="width: ${pct}%"></div>
                     </div>
-                    <div class="mt-1 text-[10px] text-slate-500">${pct}% успешно</div>
                 </div>
             `;
         }).join('')
-        : '<div class="text-[11px] text-slate-400">Нет данных для специальностей</div>';
+        : '<div class="flex min-h-32 items-center justify-center border border-dashed border-slate-300 text-xs text-slate-500">Пока нет результатов тестирования</div>';
 
     const dateMap = {};
     const today = new Date();
     for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(today.getDate() - i);
-        const key = date.toISOString().slice(0, 10);
+        const key = getLocalDateKey(date);
         dateMap[key] = 0;
     }
 
     globalResults.forEach(res => {
         const parsed = parseDateFromResult(res.passed_at);
         if (!parsed) return;
-        const key = parsed.toISOString().slice(0, 10);
+        const key = getLocalDateKey(parsed);
         if (Object.prototype.hasOwnProperty.call(dateMap, key)) {
             dateMap[key] += 1;
         }
@@ -561,17 +568,19 @@ function renderDashboard() {
         count
     }));
 
-    datesNode.innerHTML = dateEntries.map(item => `
-        <div class="rounded-lg border border-slate-200 bg-white p-2">
-            <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                <span>${item.label}</span>
-                <span>${item.count}</span>
+    const maxDailyCount = Math.max(...dateEntries.map(item => item.count), 1);
+    datesNode.innerHTML = dateEntries.map(item => {
+        const barHeight = item.count ? Math.max((item.count / maxDailyCount) * 100, 8) : 3;
+        return `
+            <div class="dashboard-week-day" title="${item.label}: ${item.count} тестов">
+                <span class="text-[10px] font-bold tabular-nums text-slate-700">${item.count || ''}</span>
+                <div class="dashboard-week-track" role="img" aria-label="${item.label}: ${item.count} тестов">
+                    <div class="dashboard-week-bar" style="height: ${barHeight}%"></div>
+                </div>
+                <span class="dashboard-week-day-label">${item.label}</span>
             </div>
-            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div class="h-full bg-slate-900 rounded-full" style="width: ${Math.min((item.count / Math.max(...dateEntries.map(x => x.count), 1)) * 100, 100)}%"></div>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function renderResultsTable() {
