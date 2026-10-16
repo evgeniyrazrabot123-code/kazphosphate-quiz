@@ -4,5 +4,6 @@ sqlalchemy
 python-multipart
 alembic
 psycopg2-binary
+psycopg[binary]
 openpyxl
 httpx2
