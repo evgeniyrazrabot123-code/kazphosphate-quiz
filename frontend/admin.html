@@ -62,8 +62,8 @@
         <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-4">
             <h1 class="text-2xl font-bold text-slate-900">Вход в админку</h1>
             <form id="login-form" class="space-y-4" onsubmit="loginAdmin(event)">
-                <input id="admin-login" type="text" value="admin" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Логин">
-                <input id="admin-password" type="password" value="kazphosphate" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Пароль">
+                <input id="admin-login" type="text" autocomplete="username" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Логин администратора">
+                <input id="admin-password" type="password" autocomplete="current-password" required class="w-full px-3 py-2 border rounded kpp-input" placeholder="Пароль администратора">
                 <button type="submit" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded uppercase text-xs hover:bg-slate-800 transition">Войти</button>
                 <p id="login-error" class="hidden text-sm text-red-600 font-semibold"></p>
             </form>
@@ -87,6 +87,9 @@
                 <button onclick="exportResultsXLSX()" class="px-4 py-2 bg-[#0F1E36] hover:bg-[#0b1626] text-white font-bold rounded text-xs uppercase tracking-wider transition flex items-center gap-1.5">
                     📥 Excel (.xlsx)
                 </button>
+                <button onclick="logoutAdmin()" class="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded text-xs transition" title="Завершить сеанс">
+                    Выйти
+                </button>
             </div>
         </header>
 
@@ -97,6 +100,7 @@
             <button onclick="switchTab('questions_list')" id="tab-questions-list-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">Вопросы в базе</button>
             <button onclick="switchTab('add_question')" id="tab-add-question-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">+ Добавить вопрос</button>
             <button onclick="switchTab('specialties')" id="tab-specialties-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">🛠 Специальности</button>
+            <button onclick="switchTab('guide')" id="tab-guide-btn" class="px-4 py-2 font-bold rounded text-slate-600 bg-white border text-xs uppercase tracking-wider transition">Справочник</button>
         </div>
 
         <!-- ДЭШБОРД -->
@@ -155,24 +159,24 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div class="text-[10px] uppercase tracking-wide text-slate-500">Всего</div>
-                        <div id="dashboard-total" class="mt-2 text-2xl font-black text-slate-900">0</div>
+                        <div id="results-total" class="mt-2 text-2xl font-black text-slate-900">0</div>
                     </div>
                     <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
                         <div class="text-[10px] uppercase tracking-wide text-emerald-700">Прошли</div>
-                        <div id="dashboard-pass" class="mt-2 text-2xl font-black text-emerald-700">0</div>
+                        <div id="results-pass" class="mt-2 text-2xl font-black text-emerald-700">0</div>
                     </div>
                     <div class="rounded-xl border border-red-200 bg-red-50 p-3">
                         <div class="text-[10px] uppercase tracking-wide text-red-700">Не прошли</div>
-                        <div id="dashboard-fail" class="mt-2 text-2xl font-black text-red-700">0</div>
+                        <div id="results-fail" class="mt-2 text-2xl font-black text-red-700">0</div>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="relative flex items-center justify-center h-32 w-32">
-                        <div id="dashboard-ring" class="h-28 w-28 rounded-full border-[10px] border-transparent" style="background: conic-gradient(#16a34a 0 0%, #ef4444 0 100%);"></div>
+                        <div id="results-ring" class="h-28 w-28 rounded-full border-[10px] border-transparent" style="background: conic-gradient(#16a34a 0 0%, #ef4444 0 100%);"></div>
                         <div class="absolute inset-3 flex items-center justify-center rounded-full bg-white shadow-inner">
                             <div class="text-center">
-                                <div id="dashboard-rate" class="text-xl font-black text-slate-900">0%</div>
+                                <div id="results-rate" class="text-xl font-black text-slate-900">0%</div>
                                 <div class="text-[10px] uppercase tracking-wide text-slate-500">успешно</div>
                             </div>
                         </div>
@@ -285,7 +289,7 @@
                     </div>
                 </div>
 
-                <div class="text-[11px] text-slate-500">Выберите один правильный вариант в каждом языке. Система сохранит его как индекс ответа в текущей структуре данных.</div>
+                <div class="text-[11px] text-slate-500">Отметьте правильный ответ в обоих языках на одной и той же позиции. Порядок вариантов RU и KK должен совпадать: система хранит один общий номер правильного ответа.</div>
 
                 <button type="submit" class="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-xs uppercase tracking-wider transition">Сохранить вопрос</button>
             </form>
@@ -341,6 +345,64 @@
                     <tbody id="specialties-table-body" class="divide-y divide-slate-100 font-medium"></tbody>
                 </table>
             </div>
+        </div>
+
+        <div id="tab-guide" class="hidden bg-white border border-slate-200 rounded-md p-5 sm:p-7 shadow-sm space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-lg font-extrabold text-slate-900">Справочник администратора</h2>
+                <p class="mt-1 text-sm text-slate-600">Порядок работы с результатами, вопросами, специальностями и допусками.</p>
+            </div>
+
+            <section class="space-y-2">
+                <h3 class="font-bold text-slate-900">1. Вход и безопасность</h3>
+                <p class="text-sm text-slate-700">Адрес панели: <span class="font-mono">/admin</span> на сайте. Данные для входа задаются в Render: откройте Web Service → Environment и добавьте <span class="font-mono">ADMIN_USERNAME</span>, <span class="font-mono">ADMIN_PASSWORD</span> и <span class="font-mono">ADMIN_TOKEN</span>. Для каждой переменной задайте собственное секретное значение, сохраните и выполните новый деплой. Не публикуйте пароль, токен или строку подключения к базе.</p>
+                <p class="text-sm text-slate-700">Кнопка «Выйти» завершает сеанс на этом устройстве. Если Render сообщает, что админ-доступ не настроен, проверьте все три переменные окружения и перезапустите сервис.</p>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="font-bold text-slate-900">2. Дэшборд и результаты</h3>
+                <p class="text-sm text-slate-700">Дэшборд показывает число попыток, долю сдавших, статистику по специальностям и за последние семь дней. Результат считается успешным при оценке не ниже 70%.</p>
+                <p class="text-sm text-slate-700">Во вкладке «Результаты сотрудников» ищите по ФИО или ИИН и фильтруйте по должности и итогу теста. Ссылки в столбце «Допуск» открывают загруженные документы. «Удалить» скрывает результат из списка; сначала убедитесь, что запись выбрана верно.</p>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="font-bold text-slate-900">3. Экспорт и допуск</h3>
+                <p class="text-sm text-slate-700">Кнопки CSV и Excel выгружают результаты тестирования в файл на компьютер. Храните эти файлы в защищённом месте: они могут содержать персональные данные.</p>
+                <p class="text-sm text-slate-700">Чтобы подготовить допуск, нажмите «Пропуск» у результата, проверьте ФИО и должность, укажите организацию, категорию и дату выдачи. Категория A действует год, B — шесть месяцев, C — один день. При необходимости добавьте фотографию, сохраните карточку, затем нажмите «Печать / PDF».</p>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="font-bold text-slate-900">4. Добавление вопроса</h3>
+                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1">
+                    <li>Откройте «Добавить вопрос» и выберите специальность.</li>
+                    <li>Заполните текст вопроса на русском и казахском.</li>
+                    <li>Введите переведённые варианты ответов в одинаковом порядке для обоих языков. Одинаковый номер должен обозначать один и тот же ответ.</li>
+                    <li>Отметьте правильный ответ в RU и KK на одной позиции. Например, если правильный вариант третий по-русски, он должен быть третьим и по-казахски.</li>
+                    <li>Добавьте минимум два варианта, проверьте тексты и нажмите «Сохранить вопрос».</li>
+                </ol>
+                <p class="text-sm text-slate-700">Новый вопрос проверьте во вкладке «Вопросы в базе». Поиск ищет по тексту на обоих языках, список можно отфильтровать по категории. Удаление вопроса удаляет его из теста; перед удалением проверьте ID и содержание.</p>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="font-bold text-slate-900">5. Специальности</h3>
+                <p class="text-sm text-slate-700">Во вкладке «Специальности» добавьте уникальный системный код латиницей, например <span class="font-mono">crane_operator</span>, и заполните названия RU и KK. Код используется как связь вопроса с должностью, поэтому после создания его нельзя менять. Названия можно редактировать.</p>
+                <p class="text-sm text-slate-700">Перед удалением специальности проверьте вопросы и результаты, связанные с ней: удаление названия может оставить их без понятной подписи. Кнопка «Обновить сейчас» повторно загружает список с сервера.</p>
+            </section>
+
+            <section class="space-y-2 rounded border border-amber-200 bg-amber-50 p-4">
+                <h3 class="font-bold text-amber-900">6. Сохранность данных</h3>
+                <p class="text-sm text-amber-900">Тестовые результаты, вопросы и специальности хранятся в подключённой базе данных. Перед массовыми изменениями скачивайте экспорт результатов и настраивайте резервное копирование в Supabase. Не удаляйте проект базы и не сбрасывайте её, если нужны сохранённые записи. Загруженные фотографии могут храниться на диске Render отдельно от базы и требуют отдельного постоянного хранилища.</p>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="font-bold text-slate-900">7. Если что-то не работает</h3>
+                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-1">
+                    <li>Не удаётся войти: проверьте переменные администратора в Render и статус последнего деплоя.</li>
+                    <li>Не загружаются списки или сохранение не проходит: проверьте, что сервис работает и база доступна; обновите страницу и войдите снова.</li>
+                    <li>Новый вопрос не виден для должности: проверьте выбранную категорию и наличие специальности.</li>
+                    <li>После изменения переменных Render нужен новый запуск приложения. Не отправляйте в поддержку или чат секреты и полные строки подключения.</li>
+                </ul>
+            </section>
         </div>
     </div>
 

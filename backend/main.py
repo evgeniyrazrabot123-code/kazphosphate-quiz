@@ -62,14 +62,26 @@ except ImportError:
 # =====================================================================
 # АВТОРИЗАЦИЯ АДМИНА
 # =====================================================================
-ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'kazphosphate'
-ADMIN_TOKEN = 'kazphosphate-admin-token'
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', '').strip()
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', '')
+
+def require_admin_config():
+    if not ADMIN_USERNAME or not ADMIN_PASSWORD or not ADMIN_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail='Админ-доступ не настроен. Задайте ADMIN_USERNAME, ADMIN_PASSWORD и ADMIN_TOKEN в переменных окружения.'
+        )
 
 def verify_admin_credentials(username: str, password: str) -> bool:
-    return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
+    if not ADMIN_USERNAME or not ADMIN_PASSWORD:
+        return False
+    return hmac.compare_digest(username.encode('utf-8'), ADMIN_USERNAME.encode('utf-8')) and hmac.compare_digest(
+        password.encode('utf-8'), ADMIN_PASSWORD.encode('utf-8')
+    )
 
 def get_admin_authorization(authorization: str | None = Header(None)) -> str:
+    require_admin_config()
     if not authorization or not authorization.startswith('Bearer '):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized')
     token = authorization.split(' ', 1)[1].strip()
@@ -510,6 +522,7 @@ async def submit_quiz(
 # =====================================================================
 @app.post('/api/admin/login')
 def admin_login(username: str = Form(...), password: str = Form(...)):
+    require_admin_config()
     if not verify_admin_credentials(username, password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     return {'token': ADMIN_TOKEN}
@@ -894,14 +907,33 @@ def add_question(
     admin_auth: str = Depends(get_admin_authorization)
 ):
     category_clean = category.strip()
+    text_ru_clean = text_ru.strip()
+    text_kk_clean = text_kk.strip()
+
+    try:
+        options_ru_list = json.loads(options_ru)
+        options_kk_list = json.loads(options_kk)
+    except (TypeError, json.JSONDecodeError):
+        raise HTTPException(status_code=422, detail='Варианты ответов должны быть корректными списками JSON')
+
+    if not category_clean or not text_ru_clean or not text_kk_clean:
+        raise HTTPException(status_code=422, detail='Заполните специальность и текст вопроса на обоих языках')
+    if not isinstance(options_ru_list, list) or not isinstance(options_kk_list, list):
+        raise HTTPException(status_code=422, detail='Варианты ответов должны быть списками')
+    if len(options_ru_list) < 2 or len(options_ru_list) != len(options_kk_list):
+        raise HTTPException(status_code=422, detail='Добавьте минимум два варианта и одинаковое их количество для RU и KK')
+    if any(not isinstance(option, str) or not option.strip() for option in options_ru_list + options_kk_list):
+        raise HTTPException(status_code=422, detail='Текст каждого варианта ответа должен быть заполнен')
+    if not 0 <= correct_option_index < len(options_ru_list):
+        raise HTTPException(status_code=422, detail='Индекс правильного ответа выходит за пределы списка вариантов')
 
     new_q = models.Question(
         category=category_clean,
-        text_ru=text_ru.strip(),
-        text_kk=text_kk.strip(),
-        options_ru=options_ru,
-        options_kk=options_kk,
-        correct_option_index=int(correct_option_index)
+        text_ru=text_ru_clean,
+        text_kk=text_kk_clean,
+        options_ru=json.dumps([option.strip() for option in options_ru_list], ensure_ascii=False),
+        options_kk=json.dumps([option.strip() for option in options_kk_list], ensure_ascii=False),
+        correct_option_index=correct_option_index
     )
     db.add(new_q)
     db.commit()
