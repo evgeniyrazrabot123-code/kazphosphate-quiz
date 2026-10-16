@@ -587,9 +587,11 @@ function renderResultsTable() {
     const tbody = document.getElementById('results-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
+    const countNode = document.getElementById('results-count');
 
     if (!Array.isArray(globalResults) || globalResults.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Результаты тестирования в базе данных отсутствуют</td></tr>`;
+        if (countNode) countNode.textContent = '0 записей';
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Результатов тестирования пока нет</td></tr>`;
         return;
     }
 
@@ -607,9 +609,12 @@ function renderResultsTable() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Нет результатов по выбранным фильтрам</td></tr>`;
+        if (countNode) countNode.textContent = `0 из ${globalResults.length}`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Нет записей по выбранным фильтрам</td></tr>`;
         return;
     }
+
+    if (countNode) countNode.textContent = `Показано ${filtered.length} из ${globalResults.length}`;
 
     filtered.forEach((res, index) => {
         const tr = document.createElement('tr');
@@ -625,18 +630,25 @@ function renderResultsTable() {
             : '<span class="text-slate-400">Нет</span>';
         const prettyPosition = specs[res.position] || res.position;
         const passed = getResultPassed(res);
+        const percent = Number(res.total_questions) > 0 ? Math.round((Number(res.score) / Number(res.total_questions)) * 100) : 0;
 
         tr.innerHTML = `
-            <td class="p-3 border-r border-slate-100 font-mono text-[11px] text-slate-500">${escapeHtml(res.passed_at)}</td>
-            <td class="p-3 border-r border-slate-100 font-bold text-slate-900">${escapeHtml(res.full_name)}</td>
-            <td class="p-3 border-r border-slate-100 text-slate-700">${escapeHtml(prettyPosition)}</td>
-            <td class="p-3 border-r border-slate-100 font-extrabold ${passed ? 'text-emerald-700' : 'text-red-600'}">${escapeHtml(res.score)} / ${escapeHtml(res.total_questions)}</td>
-            <td class="p-3 border-r border-slate-100">${docsHtml}</td>
-            <td class="p-3 text-center border-r border-slate-100">
-                <button onclick="openBadgeModal(${globalResults.indexOf(res)})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-extrabold uppercase transition text-[10px] shadow-sm">🪪 Пропуск</button>
+            <td data-label="Дата" class="p-3 font-mono text-[11px] text-slate-500">${escapeHtml(res.passed_at)}</td>
+            <td data-label="Сотрудник" class="p-3">
+                <div class="font-bold text-slate-900">${escapeHtml(res.full_name)}</div>
+                <div class="mt-1 font-mono text-[10px] text-slate-500">ИИН: ${escapeHtml(res.iin || 'не указан')}</div>
             </td>
-            <td class="p-3 text-center">
-                <button onclick="deleteResult(${res.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg font-extrabold uppercase transition text-[10px] border border-red-200">Удалить</button>
+            <td data-label="Специальность" class="p-3 text-slate-700">${escapeHtml(prettyPosition)}</td>
+            <td data-label="Баллы" class="p-3">
+                <div class="font-extrabold tabular-nums ${passed ? 'text-emerald-700' : 'text-[#C8102E]'}">${escapeHtml(res.score)} / ${escapeHtml(res.total_questions)}</div>
+                <div class="mt-1 text-[10px] text-slate-500">${percent}% · ${passed ? 'сдал' : 'повтор'}</div>
+            </td>
+            <td data-label="Документы" class="p-3">${docsHtml}</td>
+            <td data-label="Действия" class="p-3">
+                <div class="flex flex-wrap items-center gap-2 sm:justify-center">
+                    <button onclick="openBadgeModal(${globalResults.indexOf(res)})" class="rounded-sm bg-[#002B49] px-3 py-2 text-[10px] font-bold uppercase text-white transition hover:bg-[#0b4267]">Оформить допуск</button>
+                    <button onclick="deleteResult(${res.id})" class="rounded-sm border border-red-200 px-3 py-2 text-[10px] font-bold uppercase text-[#C8102E] transition hover:bg-red-50">Скрыть</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
